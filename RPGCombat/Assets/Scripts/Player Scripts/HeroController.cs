@@ -183,8 +183,7 @@ public class HeroController : MonoBehaviour {
 		{
 			isFlinching = false;	// Set to false to avoid infinite flinch loop
 		}
-		isDead = true;
-		playerState = PlayerState.Dead;
+
 		// Check if flinch animation is done playing
 		if(!isFlinching && anim.GetCurrentAnimatorStateInfo(0).nameHash != flinchStateHash)
 		{

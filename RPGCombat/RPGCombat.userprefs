@@ -1,9 +1,10 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
   <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Scripts/Player Scripts/HeroController.cs">
     <Files>
       <File FileName="Assets/Scripts/Camera Scripts/ThirdPersonCamera.cs" Line="43" Column="110" />
-      <File FileName="Assets/Scripts/Player Scripts/HeroController.cs" Line="264" Column="42" />
+      <File FileName="Assets/Scripts/Player Scripts/HeroController.cs" Line="345" Column="82" />
+      <File FileName="Assets/Scripts/Player Scripts/HeroStats.cs" Line="8" Column="44" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
