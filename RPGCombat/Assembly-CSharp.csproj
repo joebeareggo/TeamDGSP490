@@ -48,6 +48,7 @@
   <ItemGroup>
      <Compile Include="Assets\Scripts\Camera Scripts\ThirdPersonCamera.cs" />
      <Compile Include="Assets\Scripts\Player Scripts\HeroController.cs" />
+     <Compile Include="Assets\Scripts\Player Scripts\HeroStats.cs" />
      <None Include="Assets\Hero\Hero_general_ANIMATIONs\general_vol2_18_motiondata.xml" />
      <None Include="Assets\Hero\Standard Assets\Shaders\DifSpecTransp.shader" />
   </ItemGroup>

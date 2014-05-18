@@ -23,6 +23,7 @@ public class HeroController : MonoBehaviour {
 	int attackStateHash = Animator.StringToHash ("Base Layer.Attack");	// Attack state
 	int dodgeStateHash = Animator.StringToHash ("Base Layer.Dodge");	// Dodge state
 	int flinchStateHash = Animator.StringToHash ("Base Layer.Flinch");	// Flinch state
+	int dyingStateHash = Animator.StringToHash ("Base Layer.Dying");	// Dying state
 
 	// Animator conditional hash variables
 	int xVelocityHash = Animator.StringToHash ("xVelocity");	// Horizontal velocity hash
@@ -34,7 +35,9 @@ public class HeroController : MonoBehaviour {
 	int isDodgingHash = Animator.StringToHash ("isDodging");	// Player dodge hash
 	int isSprintingHash = Animator.StringToHash ("isSprinting");	// Player sprint hash
 	int isFlinchingHash = Animator.StringToHash ("isFlinching");	// Player flinch hash
-	int isBlockingHash = Animator.StringToHash ("isBlocking");	// Player is blocking
+	int isBlockingHash = Animator.StringToHash ("isBlocking");	// Player block hash
+	int isDeadHash = Animator.StringToHash ("isDead");	// Player dead hash
+	int isDyingHash = Animator.StringToHash ("isDying");	// Player dying hash
 
 	// Conditional variables
 	bool isIdle;		// Player isn't moving
@@ -44,6 +47,8 @@ public class HeroController : MonoBehaviour {
 	bool isSprinting;	// Player is sprinting
 	bool isFlinching;	// Player is flinching
 	bool isBlocking;	// Player is blocking
+	bool isDead;		// Player is dead
+	bool isDying;		// Player is dying
 
 	// Use this for initialization
 	void Start () {
@@ -60,7 +65,8 @@ public class HeroController : MonoBehaviour {
 		movingForward = true;	// Initiate forward
 		isAttacking = false;	// Initiate player not attacking
 		isDodging = false;	// Initiate player not dodging
-		isBlocking = false;	// Initiate player in casual mode
+		isBlocking = false;	// Initiate player not blocking
+		isDead = false;	// Initiate player alive
 	}
 	
 	// Update is called once per frame
@@ -177,7 +183,8 @@ public class HeroController : MonoBehaviour {
 		{
 			isFlinching = false;	// Set to false to avoid infinite flinch loop
 		}
-
+		isDead = true;
+		playerState = PlayerState.Dead;
 		// Check if flinch animation is done playing
 		if(!isFlinching && anim.GetCurrentAnimatorStateInfo(0).nameHash != flinchStateHash)
 		{
@@ -216,7 +223,11 @@ public class HeroController : MonoBehaviour {
 	 */
 	void DeathLogic()
 	{
-		// TODO: Check death animation state and respond upon completion.
+		// ensure the animation has started
+		if(isDying && anim.GetCurrentAnimatorStateInfo (0).nameHash == dyingStateHash)
+		{
+			isDying = false;	// Set to false to avoid infinite dying loop
+		}
 	}
 
 	/*
@@ -299,6 +310,8 @@ public class HeroController : MonoBehaviour {
 		anim.SetBool (isSprintingHash, isSprinting);
 		anim.SetBool (isFlinchingHash, isFlinching);
 		anim.SetBool (isBlockingHash, isBlocking);
+		anim.SetBool (isDeadHash, isDead);
+		anim.SetBool (isDyingHash, isDying);
 	}
 
 	// Can the player attack?
@@ -318,6 +331,21 @@ public class HeroController : MonoBehaviour {
 	// Player is attacked
 	public void TakeHit()
 	{
+		/* 
+		 * TODO: Compare hit with currrent state:
+		 * Free && not blocking -- take damage and flinch.
+		 * Free && blocking && CanBlock() -- take no damage and reduce stamina.
+		 * 		** CanBlock() should check the user's direction in relation to the attacker's position. **
+		 * Flinching -- take no damage and do nothing.
+		 * Dodging -- take no damage and do nothing.
+		 * 
+		 * Add parameters to the function for damage and source position.
+		 * 
+		 * If the player takes damage from the hit, compare the player's current health to 0 and determine
+		 * if the death state should be initiated (and isDying and isDead set to true).
+		 */
+
+
 		// Check for flinch-capable states
 		if(playerState == PlayerState.Free || playerState == PlayerState.Attacking)
 		{
