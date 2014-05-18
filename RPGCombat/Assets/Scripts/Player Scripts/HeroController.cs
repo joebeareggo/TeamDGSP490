@@ -34,6 +34,7 @@ public class HeroController : MonoBehaviour {
 	int isDodgingHash = Animator.StringToHash ("isDodging");	// Player dodge hash
 	int isSprintingHash = Animator.StringToHash ("isSprinting");	// Player sprint hash
 	int isFlinchingHash = Animator.StringToHash ("isFlinching");	// Player flinch hash
+	int isBlockingHash = Animator.StringToHash ("isBlocking");	// Player is blocking
 
 	// Conditional variables
 	bool isIdle;		// Player isn't moving
@@ -42,6 +43,7 @@ public class HeroController : MonoBehaviour {
 	bool isDodging;		// Player is dodging
 	bool isSprinting;	// Player is sprinting
 	bool isFlinching;	// Player is flinching
+	bool isBlocking;	// Player is blocking
 
 	// Use this for initialization
 	void Start () {
@@ -58,6 +60,7 @@ public class HeroController : MonoBehaviour {
 		movingForward = true;	// Initiate forward
 		isAttacking = false;	// Initiate player not attacking
 		isDodging = false;	// Initiate player not dodging
+		isBlocking = false;	// Initiate player in casual mode
 	}
 	
 	// Update is called once per frame
@@ -247,8 +250,19 @@ public class HeroController : MonoBehaviour {
 			}
 		}
 
+		// Block on left-mouse hold
+		if(Input.GetMouseButton (1))
+		{
+			isBlocking = true;
+		}
+		else
+		{
+			isBlocking = false;
+		}
+
 		// Sprint on Left Shift
-		if(Input.GetKey (KeyCode.LeftShift))
+		// Sprinting not allowed while blocking
+		if(Input.GetKey (KeyCode.LeftShift) && !isBlocking)
 		{
 			isSprinting = true;
 		}
@@ -284,13 +298,14 @@ public class HeroController : MonoBehaviour {
 		anim.SetBool (isDodgingHash, isDodging);
 		anim.SetBool (isSprintingHash, isSprinting);
 		anim.SetBool (isFlinchingHash, isFlinching);
+		anim.SetBool (isBlockingHash, isBlocking);
 	}
 
 	// Can the player attack?
 	public bool CanAttack()
 	{
 		// Check for attack-capable states
-		if(playerState == PlayerState.Free)
+		if(playerState == PlayerState.Free && !isBlocking)
 		{
 			return true;
 		}

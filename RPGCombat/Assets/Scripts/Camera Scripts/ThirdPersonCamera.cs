@@ -40,7 +40,7 @@ public class ThirdPersonCamera : MonoBehaviour {
 			y = 89.0f;
 		}
 
-		target.transform.Rotate (0, hMouse * mouseSensitivity * Time.deltaTime, 0);	// Rotate left and right
+		target.transform.Rotate (0, hMouse * mouseSensitivity * Time.deltaTime, 0);	// Rotate target left and right
 
 		// Position the camera behind the player
 		Quaternion rotation = Quaternion.Euler (y, target.transform.eulerAngles.y, 0);
