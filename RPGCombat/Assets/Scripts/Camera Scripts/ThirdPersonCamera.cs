@@ -4,6 +4,7 @@ using System.Collections;
 public class ThirdPersonCamera : MonoBehaviour {
 
 	public GameObject target;
+	HeroController targetController;
 	float cameraDistance = 5.0f;
 
 	float mouseSensitivity = 200.0f;
@@ -13,6 +14,8 @@ public class ThirdPersonCamera : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		targetController = target.GetComponent<HeroController> ();	// Initiate target controller
+
 		Vector3 angle = transform.eulerAngles;
 		x = angle.x;
 		y = angle.y;
@@ -40,7 +43,11 @@ public class ThirdPersonCamera : MonoBehaviour {
 			y = 89.0f;
 		}
 
-		target.transform.Rotate (0, hMouse * mouseSensitivity * Time.deltaTime, 0);	// Rotate target left and right
+		// Check rotate-able states
+		if(targetController.playerState == HeroController.PlayerState.Free)
+		{
+			target.transform.Rotate (0, hMouse * mouseSensitivity * Time.deltaTime, 0);	// Rotate target left and right
+		}
 
 		// Position the camera behind the player
 		Quaternion rotation = Quaternion.Euler (y, target.transform.eulerAngles.y, 0);

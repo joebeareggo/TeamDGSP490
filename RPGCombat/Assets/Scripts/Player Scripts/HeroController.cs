@@ -5,14 +5,15 @@ public class HeroController : MonoBehaviour {
 
 	Animator anim;
 
+	// Player Stats object
+	HeroStats heroStats;
+
 	// Player variables
 	float pMoveSpeed = 2.0f;
 
 	// State variables
-	enum PlayerState { Free, Attacking, Flinching, Dodging, Dead };	// Player states
-	PlayerState playerState;
-	
-	// TODO: Combat mode && blocking state
+	public enum PlayerState { Free, Attacking, Flinching, Dodging, Dead };	// Player states
+	public PlayerState playerState;
 
 	// Movement variables
 	float hMovement;	// Horizontal movement
@@ -53,6 +54,7 @@ public class HeroController : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		anim = GetComponent<Animator> ();	// Animator component
+		heroStats = GetComponent<HeroStats> ();	// HeroStats component
 
 		playerState = PlayerState.Free;	// Initiate player state to 'Free'
 
@@ -75,6 +77,16 @@ public class HeroController : MonoBehaviour {
 		ResetVariables ();	// Reset necessary variables
 
 		UserInput ();	// Get user input
+
+		// Player death
+		if(heroStats.GetHealth () <= 0 && !isDead)
+		{
+			playerState = PlayerState.Dead;	// Player is dead
+			isDying = true;
+			isDead = true;
+
+			isFlinching = true;	// Avoid flinch loop
+		}
 
 		// Handle player state
 		switch(playerState)
@@ -222,11 +234,12 @@ public class HeroController : MonoBehaviour {
 	 */
 	void DeathLogic()
 	{
-		// ensure the animation has started
 		if(isDying && anim.GetCurrentAnimatorStateInfo (0).nameHash == dyingStateHash)
 		{
-			isDying = false;	// Set to false to avoid infinite dying loop
+			isDying = false;	// Avoid death loop
 		}
+
+		isFlinching = false;	// Avoid flinching loop
 	}
 
 	/*
@@ -281,13 +294,21 @@ public class HeroController : MonoBehaviour {
 			isSprinting = false;
 		}
 
-		// TODO: Space bar for dodge
+		// Dodge on space bar
+		if(Input.GetKeyDown (KeyCode.Space))
+		{
+			if(CanDodge())
+			{
+				playerState = PlayerState.Attacking;
+				isDodging = true;
+			}
+		}
 
 		// Testing conditions
 		// Player flinch
 		if(Input.GetKeyDown (KeyCode.F))
 		{
-			TakeHit ();	// Function for player being attacked
+			TakeHit (Vector2.zero, 30.0f);	// Function for player being attacked
 		}
 	}
 
@@ -327,29 +348,63 @@ public class HeroController : MonoBehaviour {
 		}
 	}
 
-	// Player is attacked
-	public void TakeHit()
+	// Can the player dodge?
+	public bool CanDodge()
 	{
-		/* 
-		 * TODO: Compare hit with currrent state:
-		 * Free && not blocking -- take damage and flinch.
-		 * Free && blocking && CanBlock() -- take no damage and reduce stamina.
-		 * 		** CanBlock() should check the user's direction in relation to the attacker's position. **
-		 * Flinching -- take no damage and do nothing.
-		 * Dodging -- take no damage and do nothing.
-		 * 
-		 * Add parameters to the function for damage and source position.
-		 * 
-		 * If the player takes damage from the hit, compare the player's current health to 0 and determine
-		 * if the death state should be initiated (and isDying and isDead set to true).
-		 */
-
-
-		// Check for flinch-capable states
-		if(playerState == PlayerState.Free || playerState == PlayerState.Attacking)
+		// Check for dodge-capable states
+		if(playerState == PlayerState.Free)
 		{
-			playerState = PlayerState.Flinching;	// Set player state to 'Flinching'
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	// Can the player block the attack?
+	public void CanBlock(Vector2 source)
+	{
+		// TODO: Compare source to the player's rotation
+	}
+
+	// Player is attacked
+	public void TakeHit(Vector2 source, float damage)
+	{
+		// Player is free and not blocking
+		if(playerState == PlayerState.Free && !isBlocking)
+		{
+			// Player is injured from the attack
+			// TODO: Adjust player health and set state to flinching
+
+			heroStats.SetHealth (heroStats.GetHealth () - damage);	// Set health to current health minus the attack's damage
+			playerState = PlayerState.Flinching;
 			isFlinching = true;
+		}
+		// Player is attacking
+		else if(playerState == PlayerState.Attacking)
+		{
+			// Player is injured from the attack
+			heroStats.SetHealth (heroStats.GetHealth () - damage);	// Take damage
+			playerState = PlayerState.Flinching;	// Start flinching logic
+			isFlinching = true;		// Enable flinching
+			isAttacking = false;	// Set attackign to false
+		}
+		// Player is free and blocking
+		else if(playerState == PlayerState.Free && isBlocking)
+		{
+			// Check if player can block attack
+			// i.e. is the player facing the attacking opponent
+		}
+		// Player is flinching
+		else if(playerState == PlayerState.Flinching)
+		{
+			// Player can't be injured
+		}
+		// Player is dodging
+		else if(playerState == PlayerState.Dodging)
+		{
+			// Player can't be injured
 		}
 	}
 }

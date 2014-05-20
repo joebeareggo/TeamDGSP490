@@ -36,8 +36,8 @@
 -define:ENABLE_PROFILER
 -define:UNITY_EDITOR
 -define:UNITY_EDITOR_OSX
-'Assets/Camera/ThirdPersonCamera.cs'
-'Assets/Scripts/HeroController.cs'
-'Assets/Scripts/Player Scripts/HeroAnimator.cs'
+'Assets/Scripts/Camera Scripts/ThirdPersonCamera.cs'
+'Assets/Scripts/Player Scripts/HeroController.cs'
+'Assets/Scripts/Player Scripts/HeroStats.cs'
 -r:'/Applications/Unity/Unity.app/Contents/Frameworks/Mono/lib/mono/unity/System.Runtime.Serialization.dll'
 -r:'/Applications/Unity/Unity.app/Contents/Frameworks/Mono/lib/mono/unity/System.Xml.Linq.dll'
