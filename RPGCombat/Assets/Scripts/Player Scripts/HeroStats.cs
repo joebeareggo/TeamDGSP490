@@ -91,7 +91,62 @@ public class HeroStats : MonoBehaviour {
 		{
 			maxHealth = value;
 		}
+
+		// Ensure current health doesn't exceed maximum health
+		if(currentHealth > maxHealth)
+		{
+			currentHealth = maxHealth;
+		}
 	}
 
-	// 
+	// Get current stamina
+	public float GetStamina()
+	{
+		return currentStamina;
+	}
+
+	// Set current stamina
+	public void SetStamina(float value)
+	{
+		// Stamina can't be negative
+		if(value < 0)
+		{
+			currentStamina = 0;
+		}
+		// Stamina can't exceed maximum stamina
+		else if(value > maxStamina)
+		{
+			currentStamina = maxStamina;
+		}
+		else
+		{
+			currentStamina = value;
+		}
+	}
+
+	// Get maximum stamina
+	public float GetMaxStamina()
+	{
+		return maxStamina;
+	}
+
+	// Set maximum stamina
+	public void SetMaxStamina(float value)
+	{
+		// Max stamina must be greater than zero
+		if(value <= 0)
+		{
+			maxStamina = 1;
+		}
+		else
+		{
+			maxStamina = value;
+		}
+
+		// Check that current stamina value doens't exceed maximum
+		if(currentStamina > maxStamina)
+		{
+			currentStamina = maxStamina;
+		}
+	}
 }

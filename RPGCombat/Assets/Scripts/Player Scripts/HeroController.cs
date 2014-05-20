@@ -9,7 +9,7 @@ public class HeroController : MonoBehaviour {
 	HeroStats heroStats;
 
 	// Player variables
-	float pMoveSpeed = 2.0f;
+	float pMoveSpeed = 3.0f;
 
 	// State variables
 	public enum PlayerState { Free, Attacking, Flinching, Dodging, Dead };	// Player states
@@ -19,6 +19,7 @@ public class HeroController : MonoBehaviour {
 	float hMovement;	// Horizontal movement
 	float vMovement;	// Vertical movement
 	Vector2 movement;	// Movement vector
+	Vector2 dodgeDirection;	// direction for dodging
 
 	// Animator state hash variables
 	int attackStateHash = Animator.StringToHash ("Base Layer.Attack");	// Attack state
@@ -62,6 +63,7 @@ public class HeroController : MonoBehaviour {
 		hMovement = 0.0f;
 		vMovement = 0.0f;
 		movement = Vector2.zero;
+		dodgeDirection = Vector2.zero;
 
 		isIdle = true;	// Initiate idle
 		movingForward = true;	// Initiate forward
@@ -120,11 +122,6 @@ public class HeroController : MonoBehaviour {
 	 */
 	void FreeLogic()
 	{
-		// Initiate movement variables
-		hMovement = Input.GetAxis ("Horizontal");
-		vMovement = Input.GetAxis ("Vertical");
-		movement = new Vector2 (hMovement, vMovement);
-
 		// Player is moving
 		if(movement.magnitude > 0)
 		{
@@ -212,7 +209,12 @@ public class HeroController : MonoBehaviour {
 	 */
 	void DodgingLogic()
 	{
-		// TODO: Handle dodging physics, set player invincible.
+		// Movement variables
+		hMovement = dodgeDirection.x;
+		vMovement = dodgeDirection.y;
+		movement = dodgeDirection;
+		transform.Translate (new Vector3(dodgeDirection.x * pMoveSpeed * 3.0f * Time.deltaTime, 0, 
+		                                 dodgeDirection.y * pMoveSpeed * 3.0f * Time.deltaTime));	// Dodge movement
 
 		// Ensure the animation has started
 		if(isDodging && anim.GetCurrentAnimatorStateInfo (0).nameHash == dodgeStateHash)
@@ -224,6 +226,7 @@ public class HeroController : MonoBehaviour {
 		if(!isDodging && anim.GetCurrentAnimatorStateInfo (0).nameHash != dodgeStateHash)
 		{
 			playerState = PlayerState.Free;	// Set player state to 'Free'
+			dodgeDirection = Vector2.zero;	// Reset the dodge direction
 		}
 	}
 
@@ -262,6 +265,11 @@ public class HeroController : MonoBehaviour {
 	 */
 	void UserInput()
 	{
+		// Movement variables
+		hMovement = Input.GetAxis ("Horizontal");
+		vMovement = Input.GetAxis ("Vertical");
+		movement = new Vector2 (hMovement, vMovement);
+
 		// Attack on Left-Click
 		if(Input.GetMouseButtonDown (0))
 		{
@@ -299,8 +307,13 @@ public class HeroController : MonoBehaviour {
 		{
 			if(CanDodge())
 			{
-				playerState = PlayerState.Attacking;
+				playerState = PlayerState.Dodging;
 				isDodging = true;
+
+				dodgeDirection = movement.normalized;	// Set dodge direction to the movement direction
+
+				// Reduce stamina
+				
 			}
 		}
 
@@ -352,7 +365,9 @@ public class HeroController : MonoBehaviour {
 	public bool CanDodge()
 	{
 		// Check for dodge-capable states
-		if(playerState == PlayerState.Free)
+		// Player isn't moving backwards
+		// Player is moving
+		if(playerState == PlayerState.Free && vMovement >= 0.0f && movement.magnitude > 0.0f)
 		{
 			return true;
 		}
