@@ -52,6 +52,9 @@ public class HeroController : MonoBehaviour {
 	bool isDead;		// Player is dead
 	bool isDying;		// Player is dying
 
+	// Timers
+	float restTimer;	// Time in free state
+
 	// Use this for initialization
 	void Start () {
 		anim = GetComponent<Animator> ();	// Animator component
@@ -71,6 +74,8 @@ public class HeroController : MonoBehaviour {
 		isDodging = false;	// Initiate player not dodging
 		isBlocking = false;	// Initiate player not blocking
 		isDead = false;	// Initiate player alive
+
+		restTimer = 0.0f;	// Initiate rest timer to zero
 	}
 	
 	// Update is called once per frame
@@ -110,6 +115,8 @@ public class HeroController : MonoBehaviour {
 			break;
 		}
 
+		StaminaRegeneration ();
+
 		SetAnimatorConditionals ();	// Set the conditional variables for the animator
 	}
 
@@ -133,9 +140,17 @@ public class HeroController : MonoBehaviour {
 				movingForward = true;
 
 				// Check for sprint
-				if(isSprinting)
+				// Player must have required stamina
+				if(isSprinting && heroStats.GetStamina () > 0.0f)
 				{
-					movement *= 3.0f;
+					restTimer = 0.0f;	// Reset rest timer
+					movement *= 3.0f;	// Increase movement speed
+
+					heroStats.SetStamina (heroStats.GetStamina () - 0.25f);	// Reduce player stamina
+				}
+				else
+				{
+					isSprinting = false;
 				}
 			}
 			else if(vMovement < 0)
@@ -256,6 +271,12 @@ public class HeroController : MonoBehaviour {
 		hMovement = 0.0f;
 		vMovement = 0.0f;
 		movement = Vector2.zero;
+
+		// Reset rest timer if not in 'Free' or 'Flinching' states
+		if(playerState != PlayerState.Free && playerState != PlayerState.Flinching)
+		{
+			restTimer = 0.0f;
+		}
 	}
 
 	/*
@@ -278,13 +299,19 @@ public class HeroController : MonoBehaviour {
 			{
 				playerState = PlayerState.Attacking;	// Set player state to 'Attacking'
 				isAttacking = true;	// Triggers the animation
+
+				heroStats.SetStamina (heroStats.GetStamina () - 15.0f);	// Decrease stamina
 			}
 		}
 
 		// Block on left-mouse hold
-		if(Input.GetMouseButton (1))
+		// Stamina required for block
+		if(Input.GetMouseButton (1) && heroStats.GetStamina () > 0.0f)
 		{
 			isBlocking = true;
+
+			// Reset rest timer
+			restTimer = 0.0f;
 		}
 		else
 		{
@@ -313,7 +340,7 @@ public class HeroController : MonoBehaviour {
 				dodgeDirection = movement.normalized;	// Set dodge direction to the movement direction
 
 				// Reduce stamina
-				
+				heroStats.SetStamina (heroStats.GetStamina() - 20.0f);
 			}
 		}
 
@@ -351,7 +378,9 @@ public class HeroController : MonoBehaviour {
 	public bool CanAttack()
 	{
 		// Check for attack-capable states
-		if(playerState == PlayerState.Free && !isBlocking)
+		// Player not blocking
+		// Player has stamina
+		if(playerState == PlayerState.Free && !isBlocking && heroStats.GetStamina() > 0)
 		{
 			return true;
 		}
@@ -367,7 +396,9 @@ public class HeroController : MonoBehaviour {
 		// Check for dodge-capable states
 		// Player isn't moving backwards
 		// Player is moving
-		if(playerState == PlayerState.Free && vMovement >= 0.0f && movement.magnitude > 0.0f)
+		// Player has stamina
+		if(playerState == PlayerState.Free && vMovement >= 0.0f && 
+		   movement.magnitude > 0.0f && heroStats.GetStamina() > 0.0f)
 		{
 			return true;
 		}
@@ -420,6 +451,21 @@ public class HeroController : MonoBehaviour {
 		else if(playerState == PlayerState.Dodging)
 		{
 			// Player can't be injured
+		}
+	}
+
+	// Stamina regeneration logic
+	public void StaminaRegeneration()
+	{
+		// Regeneration during 'Free' or 'Flinching' states
+		if(playerState == PlayerState.Free || playerState == PlayerState.Flinching)
+		{
+			restTimer += Time.deltaTime;	// Increase free state duration timer by delta time
+			
+			if(restTimer >= 3.0f)
+			{
+				heroStats.SetStamina (heroStats.GetStamina () + 1.0f);
+			}
 		}
 	}
 }
