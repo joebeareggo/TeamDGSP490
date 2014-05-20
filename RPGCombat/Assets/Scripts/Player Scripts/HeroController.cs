@@ -144,7 +144,7 @@ public class HeroController : MonoBehaviour {
 				if(isSprinting && heroStats.GetStamina () > 0.0f)
 				{
 					restTimer = 0.0f;	// Reset rest timer
-					movement *= 3.0f;	// Increase movement speed
+					movement *= 2.0f;	// Increase movement speed
 
 					heroStats.SetStamina (heroStats.GetStamina () - 0.25f);	// Reduce player stamina
 				}
@@ -409,9 +409,11 @@ public class HeroController : MonoBehaviour {
 	}
 
 	// Can the player block the attack?
-	public void CanBlock(Vector2 source)
+	public bool CanBlock(Vector2 source)
 	{
 		// TODO: Compare source to the player's rotation
+
+		return true;
 	}
 
 	// Player is attacked
@@ -441,6 +443,10 @@ public class HeroController : MonoBehaviour {
 		{
 			// Check if player can block attack
 			// i.e. is the player facing the attacking opponent
+			if(CanBlock (source))
+			{
+				heroStats.SetStamina (heroStats.GetStamina () - 20.0f);	// Reduce stamina
+			}
 		}
 		// Player is flinching
 		else if(playerState == PlayerState.Flinching)
