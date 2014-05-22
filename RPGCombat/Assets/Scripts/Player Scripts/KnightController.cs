@@ -390,9 +390,8 @@ public class KnightController : MonoBehaviour {
 	public bool CanAttack()
 	{
 		// Check for attack-capable states
-		// Player not blocking
 		// Player has stamina
-		if(playerState == PlayerState.Free && !isBlocking && knightHealth.GetStamina() > 0)
+		if(playerState == PlayerState.Free && knightHealth.GetStamina() > 0)
 		{
 			return true;
 		}
