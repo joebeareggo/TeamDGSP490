@@ -1,32 +1,32 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class HeroController : MonoBehaviour {
+public class MKController : MonoBehaviour {
 
 	Animator anim;
 
 	// Player Stats object
-	HeroStats heroStats;
-
+	EnemyHealth enemyHealth;
+	
 	// Player variables
 	float pMoveSpeed = 3.0f;
-
+	
 	// State variables
 	public enum PlayerState { Free, Attacking, Flinching, Dodging, Dead };	// Player states
 	public PlayerState playerState;
-
+	
 	// Movement variables
 	float hMovement;	// Horizontal movement
 	float vMovement;	// Vertical movement
 	Vector2 movement;	// Movement vector
 	Vector2 dodgeDirection;	// direction for dodging
-
+	
 	// Animator state hash variables
 	int attackStateHash = Animator.StringToHash ("Base Layer.Attack");	// Attack state
 	int dodgeStateHash = Animator.StringToHash ("Base Layer.Dodge");	// Dodge state
 	int flinchStateHash = Animator.StringToHash ("Base Layer.Flinch");	// Flinch state
 	int dyingStateHash = Animator.StringToHash ("Base Layer.Dying");	// Dying state
-
+	
 	// Animator conditional hash variables
 	int xVelocityHash = Animator.StringToHash ("xVelocity");	// Horizontal velocity hash
 	int zVelocityHash = Animator.StringToHash ("zVelocity");	// Vertical velocity hash
@@ -40,7 +40,7 @@ public class HeroController : MonoBehaviour {
 	int isBlockingHash = Animator.StringToHash ("isBlocking");	// Player block hash
 	int isDeadHash = Animator.StringToHash ("isDead");	// Player dead hash
 	int isDyingHash = Animator.StringToHash ("isDying");	// Player dying hash
-
+	
 	// Conditional variables
 	bool isIdle;		// Player isn't moving
 	bool movingForward;	// Movement direction
@@ -51,50 +51,51 @@ public class HeroController : MonoBehaviour {
 	bool isBlocking;	// Player is blocking
 	bool isDead;		// Player is dead
 	bool isDying;		// Player is dying
-
+	
 	// Timers
 	float restTimer;	// Time in free state
-
+	
 	// Use this for initialization
 	void Start () {
 		anim = GetComponent<Animator> ();	// Animator component
-		heroStats = GetComponent<HeroStats> ();	// HeroStats component
-
+		enemyHealth = GetComponent<EnemyHealth> ();	// enemyHealth component
+		
 		playerState = PlayerState.Free;	// Initiate player state to 'Free'
-
+		
 		// Initiate movement variables
 		hMovement = 0.0f;
 		vMovement = 0.0f;
 		movement = Vector2.zero;
 		dodgeDirection = Vector2.zero;
-
+		
 		isIdle = true;	// Initiate idle
 		movingForward = true;	// Initiate forward
 		isAttacking = false;	// Initiate player not attacking
 		isDodging = false;	// Initiate player not dodging
 		isBlocking = false;	// Initiate player not blocking
 		isDead = false;	// Initiate player alive
-
+		isDying = false;	// Initiate player alive
+		
 		restTimer = 0.0f;	// Initiate rest timer to zero
 	}
 	
 	// Update is called once per frame
 	void Update () {
-
+		
 		ResetVariables ();	// Reset necessary variables
-
-		UserInput ();	// Get user input
-
+		
+		//UserInput ();	// Get user input
+		
 		// Player death
-		if(heroStats.GetHealth () <= 0 && !isDead)
+		if(enemyHealth.GetHealth () <= 0 && !isDead)
 		{
 			playerState = PlayerState.Dead;	// Player is dead
 			isDying = true;
 			isDead = true;
-
+			
 			isFlinching = true;	// Avoid flinch loop
 		}
-
+		
 		// Handle player state
 		switch(playerState)
 		{
@@ -114,12 +115,12 @@ public class HeroController : MonoBehaviour {
 			DeathLogic();
 			break;
 		}
-
+		
 		StaminaRegeneration ();
-
+		
 		SetAnimatorConditionals ();	// Set the conditional variables for the animator
 	}
-
+	
 	/*
 	 * Free State
 	 * 
@@ -133,24 +134,30 @@ public class HeroController : MonoBehaviour {
 		if(movement.magnitude > 0)
 		{
 			isIdle = false;
-
+			
 			// Check movement direction
 			if(vMovement >= 0)
 			{
 				movingForward = true;
-
+				
 				// Check for sprint
 				// Player must have required stamina
-				if(isSprinting && heroStats.GetStamina () > 0.0f)
+				if(isSprinting && enemyHealth.GetStamina () > 0.0f)
 				{
 					restTimer = 0.0f;	// Reset rest timer
 					movement *= 2.0f;	// Increase movement speed
-
-					heroStats.SetStamina (heroStats.GetStamina () - 0.25f);	// Reduce player stamina
+					
+					enemyHealth.SetStamina (enemyHealth.GetStamina () - 0.25f);	// Reduce player stamina
 				}
 				else
 				{
-					isSprinting = false;
+					isSprinting = false;	// Player can't sprint backwards
+					
+					// Slow movement for blocking
+					if(isBlocking)
+					{
+						movement *= 0.0f;
+					}
 				}
 			}
 			else if(vMovement < 0)
@@ -165,11 +172,11 @@ public class HeroController : MonoBehaviour {
 			movingForward = true;	// Set forward as default position for idle
 			isSprinting = false;	// Player cannot be sprinting
 		}
-
+		
 		// Move player
 		transform.Translate (new Vector3(movement.x, 0.0f, movement.y) * Time.deltaTime * pMoveSpeed);
 	}
-
+	
 	/*
 	 * Attacking State
 	 * 
@@ -184,14 +191,16 @@ public class HeroController : MonoBehaviour {
 		{
 			isAttacking = false;	// Set to false to avoid infinite attack loop
 		}
-
+		
 		// Check if an attack animation is done playing
 		if(!isAttacking && anim.GetCurrentAnimatorStateInfo(0).nameHash != attackStateHash)
 		{
+			// Damage the player "Knight" tag
+			
 			playerState = PlayerState.Free;	// Set player state to 'Free'
 		}
 	}
-
+	
 	/*
 	 * Flinching State
 	 * 
@@ -201,20 +210,20 @@ public class HeroController : MonoBehaviour {
 	void FlinchingLogic()
 	{
 		// TODO: Adjust logic for multiple types of recoveries (i.e. flinch, knock-back, knock-down)
-
+		
 		// Ensure the animation has started'
 		if(isFlinching && anim.GetCurrentAnimatorStateInfo (0).nameHash == flinchStateHash)
 		{
 			isFlinching = false;	// Set to false to avoid infinite flinch loop
 		}
-
+		
 		// Check if flinch animation is done playing
 		if(!isFlinching && anim.GetCurrentAnimatorStateInfo(0).nameHash != flinchStateHash)
 		{
 			playerState = PlayerState.Free;	// Set player state to 'Free'
 		}
 	}
-
+	
 	/*
 	 * Dodging State
 	 * 
@@ -230,13 +239,13 @@ public class HeroController : MonoBehaviour {
 		movement = dodgeDirection;
 		transform.Translate (new Vector3(dodgeDirection.x * pMoveSpeed * 3.0f * Time.deltaTime, 0, 
 		                                 dodgeDirection.y * pMoveSpeed * 3.0f * Time.deltaTime));	// Dodge movement
-
+		
 		// Ensure the animation has started
 		if(isDodging && anim.GetCurrentAnimatorStateInfo (0).nameHash == dodgeStateHash)
 		{
 			isDodging = false;	// Set to false to avoid infinite dodge loop
 		}
-
+		
 		// Check if dodging animation is done playing
 		if(!isDodging && anim.GetCurrentAnimatorStateInfo (0).nameHash != dodgeStateHash)
 		{
@@ -244,7 +253,7 @@ public class HeroController : MonoBehaviour {
 			dodgeDirection = Vector2.zero;	// Reset the dodge direction
 		}
 	}
-
+	
 	/*
 	 * Death State
 	 * 
@@ -256,10 +265,10 @@ public class HeroController : MonoBehaviour {
 		{
 			isDying = false;	// Avoid death loop
 		}
-
+		
 		isFlinching = false;	// Avoid flinching loop
 	}
-
+	
 	/*
 	 * Reset Variables
 	 * 
@@ -271,14 +280,14 @@ public class HeroController : MonoBehaviour {
 		hMovement = 0.0f;
 		vMovement = 0.0f;
 		movement = Vector2.zero;
-
+		
 		// Reset rest timer if not in 'Free' or 'Flinching' states
 		if(playerState != PlayerState.Free && playerState != PlayerState.Flinching)
 		{
 			restTimer = 0.0f;
 		}
 	}
-
+	
 	/*
 	 * User Input
 	 * 
@@ -290,7 +299,7 @@ public class HeroController : MonoBehaviour {
 		hMovement = Input.GetAxis ("Horizontal");
 		vMovement = Input.GetAxis ("Vertical");
 		movement = new Vector2 (hMovement, vMovement);
-
+		
 		// Attack on Left-Click
 		if(Input.GetMouseButtonDown (0))
 		{
@@ -299,17 +308,17 @@ public class HeroController : MonoBehaviour {
 			{
 				playerState = PlayerState.Attacking;	// Set player state to 'Attacking'
 				isAttacking = true;	// Triggers the animation
-
-				heroStats.SetStamina (heroStats.GetStamina () - 15.0f);	// Decrease stamina
+				
+				enemyHealth.SetStamina (enemyHealth.GetStamina () - 15.0f);	// Decrease stamina
 			}
 		}
-
+		
 		// Block on left-mouse hold
 		// Stamina required for block
-		if(Input.GetMouseButton (1) && heroStats.GetStamina () > 0.0f)
+		if(Input.GetMouseButton (1) && enemyHealth.GetStamina () > 0.0f)
 		{
 			isBlocking = true;
-
+			
 			// Reset rest timer
 			restTimer = 0.0f;
 		}
@@ -317,7 +326,7 @@ public class HeroController : MonoBehaviour {
 		{
 			isBlocking = false;
 		}
-
+		
 		// Sprint on Left Shift
 		// Sprinting not allowed while blocking
 		if(Input.GetKey (KeyCode.LeftShift) && !isBlocking)
@@ -328,7 +337,7 @@ public class HeroController : MonoBehaviour {
 		{
 			isSprinting = false;
 		}
-
+		
 		// Dodge on space bar
 		if(Input.GetKeyDown (KeyCode.Space))
 		{
@@ -336,14 +345,14 @@ public class HeroController : MonoBehaviour {
 			{
 				playerState = PlayerState.Dodging;
 				isDodging = true;
-
+				
 				dodgeDirection = movement.normalized;	// Set dodge direction to the movement direction
-
+				
 				// Reduce stamina
-				heroStats.SetStamina (heroStats.GetStamina() - 20.0f);
+				enemyHealth.SetStamina (enemyHealth.GetStamina() - 20.0f);
 			}
 		}
-
+		
 		// Testing conditions
 		// Player flinch
 		if(Input.GetKeyDown (KeyCode.F))
@@ -351,7 +360,7 @@ public class HeroController : MonoBehaviour {
 			TakeHit (Vector2.zero, 30.0f);	// Function for player being attacked
 		}
 	}
-
+	
 	/*
 	 * Set Animator Conditionals
 	 * 
@@ -362,7 +371,7 @@ public class HeroController : MonoBehaviour {
 	{
 		anim.SetFloat (xVelocityHash, hMovement);
 		anim.SetFloat (zVelocityHash, vMovement);
-
+		
 		anim.SetBool (isIdleHash, isIdle);
 		anim.SetBool (movingForwardHash, movingForward);
 		anim.SetBool (isAttackingHash, isAttacking);
@@ -373,14 +382,14 @@ public class HeroController : MonoBehaviour {
 		anim.SetBool (isDeadHash, isDead);
 		anim.SetBool (isDyingHash, isDying);
 	}
-
+	
 	// Can the player attack?
 	public bool CanAttack()
 	{
 		// Check for attack-capable states
 		// Player not blocking
 		// Player has stamina
-		if(playerState == PlayerState.Free && !isBlocking && heroStats.GetStamina() > 0)
+		if(playerState == PlayerState.Free && !isBlocking && enemyHealth.GetStamina() > 0)
 		{
 			return true;
 		}
@@ -389,7 +398,7 @@ public class HeroController : MonoBehaviour {
 			return false;
 		}
 	}
-
+	
 	// Can the player dodge?
 	public bool CanDodge()
 	{
@@ -398,7 +407,7 @@ public class HeroController : MonoBehaviour {
 		// Player is moving
 		// Player has stamina
 		if(playerState == PlayerState.Free && vMovement >= 0.0f && 
-		   movement.magnitude > 0.0f && heroStats.GetStamina() > 0.0f)
+		   movement.magnitude > 0.0f && enemyHealth.GetStamina() > 0.0f)
 		{
 			return true;
 		}
@@ -407,15 +416,15 @@ public class HeroController : MonoBehaviour {
 			return false;
 		}
 	}
-
+	
 	// Can the player block the attack?
 	public bool CanBlock(Vector2 source)
 	{
 		// TODO: Compare source to the player's rotation
-
+		
 		return true;
 	}
-
+	
 	// Player is attacked
 	public void TakeHit(Vector2 source, float damage)
 	{
@@ -424,8 +433,8 @@ public class HeroController : MonoBehaviour {
 		{
 			// Player is injured from the attack
 			// TODO: Adjust player health and set state to flinching
-
-			heroStats.SetHealth (heroStats.GetHealth () - damage);	// Set health to current health minus the attack's damage
+			
+			enemyHealth.SetHealth (enemyHealth.GetHealth () - damage);	// Set health to current health minus the attack's damage
 			playerState = PlayerState.Flinching;
 			isFlinching = true;
 		}
@@ -433,7 +442,7 @@ public class HeroController : MonoBehaviour {
 		else if(playerState == PlayerState.Attacking)
 		{
 			// Player is injured from the attack
-			heroStats.SetHealth (heroStats.GetHealth () - damage);	// Take damage
+			enemyHealth.SetHealth (enemyHealth.GetHealth () - damage);	// Take damage
 			playerState = PlayerState.Flinching;	// Start flinching logic
 			isFlinching = true;		// Enable flinching
 			isAttacking = false;	// Set attackign to false
@@ -445,7 +454,7 @@ public class HeroController : MonoBehaviour {
 			// i.e. is the player facing the attacking opponent
 			if(CanBlock (source))
 			{
-				heroStats.SetStamina (heroStats.GetStamina () - 20.0f);	// Reduce stamina
+				enemyHealth.SetStamina (enemyHealth.GetStamina () - 20.0f);	// Reduce stamina
 			}
 		}
 		// Player is flinching
@@ -459,7 +468,7 @@ public class HeroController : MonoBehaviour {
 			// Player can't be injured
 		}
 	}
-
+	
 	// Stamina regeneration logic
 	public void StaminaRegeneration()
 	{
@@ -470,7 +479,7 @@ public class HeroController : MonoBehaviour {
 			
 			if(restTimer >= 3.0f)
 			{
-				heroStats.SetStamina (heroStats.GetStamina () + 1.0f);
+				enemyHealth.SetStamina (enemyHealth.GetStamina () + 1.0f);
 			}
 		}
 	}

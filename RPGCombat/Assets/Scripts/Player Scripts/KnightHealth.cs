@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class HeroStats : MonoBehaviour {
+public class KnightHealth : MonoBehaviour {
 
 	// Player stats
 	float currentHealth;	// Current player health

@@ -37,7 +37,9 @@
 -define:UNITY_EDITOR
 -define:UNITY_EDITOR_OSX
 'Assets/Scripts/Camera Scripts/ThirdPersonCamera.cs'
-'Assets/Scripts/Player Scripts/HeroController.cs'
-'Assets/Scripts/Player Scripts/HeroStats.cs'
+'Assets/Scripts/Player Scripts/EnemyHealth.cs'
+'Assets/Scripts/Player Scripts/KnightController.cs'
+'Assets/Scripts/Player Scripts/KnightHealth.cs'
+'Assets/Scripts/Player Scripts/MKController.cs'
 -r:'/Applications/Unity/Unity.app/Contents/Frameworks/Mono/lib/mono/unity/System.Runtime.Serialization.dll'
 -r:'/Applications/Unity/Unity.app/Contents/Frameworks/Mono/lib/mono/unity/System.Xml.Linq.dll'
