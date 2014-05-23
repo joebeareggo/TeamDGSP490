@@ -38,8 +38,8 @@
 -define:UNITY_EDITOR_OSX
 'Assets/Scripts/Camera Scripts/ThirdPersonCamera.cs'
 'Assets/Scripts/Player Scripts/EnemyHealth.cs'
-'Assets/Scripts/Player Scripts/KnightController.cs'
-'Assets/Scripts/Player Scripts/KnightHealth.cs'
 'Assets/Scripts/Player Scripts/MKController.cs'
+'Assets/Scripts/Player Scripts/Player/KnightController.cs'
+'Assets/Scripts/Player Scripts/Player/KnightHealth.cs'
 -r:'/Applications/Unity/Unity.app/Contents/Frameworks/Mono/lib/mono/unity/System.Runtime.Serialization.dll'
 -r:'/Applications/Unity/Unity.app/Contents/Frameworks/Mono/lib/mono/unity/System.Xml.Linq.dll'

@@ -318,7 +318,9 @@ public class KnightController : MonoBehaviour {
 
 		// Block on left-mouse hold
 		// Stamina required for block
-		if(Input.GetMouseButton (1) && knightHealth.GetStamina () > 0.0f)
+		// Player state free
+		if(Input.GetMouseButton (1) && knightHealth.GetStamina () > 0.0f
+		   && playerState == PlayerState.Free)
 		{
 			isBlocking = true;
 

@@ -48,9 +48,9 @@
   <ItemGroup>
      <Compile Include="Assets\Scripts\Camera Scripts\ThirdPersonCamera.cs" />
      <Compile Include="Assets\Scripts\Player Scripts\EnemyHealth.cs" />
-     <Compile Include="Assets\Scripts\Player Scripts\KnightController.cs" />
-     <Compile Include="Assets\Scripts\Player Scripts\KnightHealth.cs" />
      <Compile Include="Assets\Scripts\Player Scripts\MKController.cs" />
+     <Compile Include="Assets\Scripts\Player Scripts\Player\KnightController.cs" />
+     <Compile Include="Assets\Scripts\Player Scripts\Player\KnightHealth.cs" />
      <None Include="Assets\Hero\Hero_general_ANIMATIONs\general_vol2_18_motiondata.xml" />
      <None Include="Assets\Hero\Standard Assets\Shaders\DifSpecTransp.shader" />
   </ItemGroup>
