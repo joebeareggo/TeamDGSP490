@@ -10,6 +10,8 @@ public class KnightController : MonoBehaviour {
 
 	// Player variables
 	float pMoveSpeed = 180000.0f;
+	float pDamage = 25.0f;
+	string attackType;	// Player attack type
 
 	// State variables
 	public enum PlayerState { Free, Attacking, Flinching, Dodging, Dead };	// Player states
@@ -23,6 +25,7 @@ public class KnightController : MonoBehaviour {
 
 	// Animator state hash variables
 	int attackStateHash = Animator.StringToHash ("Base Layer.Attack");	// Attack state
+	int heavyAttackStateHash = Animator.StringToHash ("Base Layer.Heavy Attack");	// Heavy attack state
 	int dodgeStateHash = Animator.StringToHash ("Base Layer.Dodge");	// Dodge state
 	int flinchStateHash = Animator.StringToHash ("Base Layer.Flinch");	// Flinch state
 	int dyingStateHash = Animator.StringToHash ("Base Layer.Dying");	// Dying state
@@ -62,6 +65,8 @@ public class KnightController : MonoBehaviour {
 		knightHealth = GetComponent<KnightHealth> ();	// KnightStats component
 
 		playerState = PlayerState.Free;	// Initiate player state to 'Free'
+
+		attackType = "Basic";	// Initiate attack type to basic
 
 		// Initiate movement variables
 		hMovement = 0.0f;
@@ -190,18 +195,41 @@ public class KnightController : MonoBehaviour {
 	 */
 	void AttackingLogic()
 	{
+		// Set attack type
+		if(anim.GetCurrentAnimatorStateInfo(0).nameHash == attackStateHash)
+		{
+			attackType = "Basic";
+		}
+		else if(anim.GetCurrentAnimatorStateInfo(0).nameHash == heavyAttackStateHash)
+		{
+			attackType = "Heavy";
+		}
+
 		// Ensure the animation has started
-		if (isAttacking && anim.GetCurrentAnimatorStateInfo (0).nameHash == attackStateHash)
+		if (isAttacking && (anim.GetCurrentAnimatorStateInfo (0).nameHash == attackStateHash
+		                    || anim.GetCurrentAnimatorStateInfo (0).nameHash == heavyAttackStateHash))
 		{
 			isAttacking = false;	// Set to false to avoid infinite attack loop
 		}
 
 		// Check if an attack animation is done playing
-		if(!isAttacking && anim.GetCurrentAnimatorStateInfo(0).nameHash != attackStateHash)
+		if(!isAttacking && anim.GetCurrentAnimatorStateInfo(0).nameHash != attackStateHash 
+		   && anim.GetCurrentAnimatorStateInfo(0).nameHash != heavyAttackStateHash)
 		{
 			// Damage enemies
 			GameObject enemy = GameObject.FindGameObjectWithTag ("Enemy");
 			EnemyController enemyController = enemy.GetComponent<EnemyController>();
+
+			float dmg = 0.0f;
+			if(attackType == "Basic")
+			{
+				dmg = 25.0f;
+			}
+			else if(attackType == "Heavy")
+			{
+				dmg = 40.0f;
+			}
+
 			enemyController.TakeHit(new Vector2(transform.position.x, transform.position.z), 25.0f);
 
 			playerState = PlayerState.Free;	// Set player state to 'Free'
