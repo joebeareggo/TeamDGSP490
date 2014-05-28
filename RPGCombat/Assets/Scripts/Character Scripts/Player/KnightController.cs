@@ -522,7 +522,7 @@ public class KnightController : MonoBehaviour {
 			
 			if(restTimer >= 3.0f)
 			{
-				knightHealth.SetStamina (knightHealth.GetStamina () + 1.0f);
+				knightHealth.SetStamina (knightHealth.GetStamina () + 30.0f * Time.deltaTime);
 			}
 		}
 	}
