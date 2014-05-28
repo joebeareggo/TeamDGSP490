@@ -58,6 +58,7 @@ public class KnightController : MonoBehaviour {
 	// Timers
 	float restTimer;	// Time in free state
 	float dodgeTimer;	// Time for dodge physics
+	float attackTimer;	// Time for attack to hit
 
 	// Use this for initialization
 	void Start () {
@@ -83,7 +84,8 @@ public class KnightController : MonoBehaviour {
 		isDying = false;	// Initiate player alive
 
 		restTimer = 0.0f;	// Initiate rest timer to zero
-		dodgeTimer = 0.0f;
+		dodgeTimer = 0.0f;	// Initiate dodge timer to zero
+		attackTimer = 0.0f;	// Initiate attack timer to zero
 	}
 	
 	// Update is called once per frame
@@ -213,10 +215,21 @@ public class KnightController : MonoBehaviour {
 		}
 
 		// Check if an attack animation is done playing
-		if(!isAttacking && anim.GetCurrentAnimatorStateInfo(0).nameHash != attackStateHash 
-		   && anim.GetCurrentAnimatorStateInfo(0).nameHash != heavyAttackStateHash)
+		//if(!isAttacking && anim.GetCurrentAnimatorStateInfo(0).nameHash != attackStateHash 
+		//   && anim.GetCurrentAnimatorStateInfo(0).nameHash != heavyAttackStateHash)
+		// Attacking trigger timer
+		if(attackTimer <= 0.60f && attackType == "Basic")
+		{
+			attackTimer += Time.deltaTime;	// Increase attack timer
+		}
+		else if(attackTimer <= 0.85f && attackType == "Heavy")
+		{
+			attackTimer += Time.deltaTime;	// Increase attack timer by update value
+		}
+		else
 		{
 			// Damage enemies
+			// TODO: Change to array type, compare distance, compare direction / range
 			GameObject enemy = GameObject.FindGameObjectWithTag ("Enemy");
 			EnemyController enemyController = enemy.GetComponent<EnemyController>();
 
@@ -327,6 +340,12 @@ public class KnightController : MonoBehaviour {
 		if(playerState != PlayerState.Free && playerState != PlayerState.Flinching)
 		{
 			restTimer = 0.0f;
+		}
+
+		// Reset attack timer
+		if(playerState != PlayerState.Attacking)
+		{
+			attackTimer = 0.0f;
 		}
 	}
 
@@ -474,9 +493,6 @@ public class KnightController : MonoBehaviour {
 		// Player is free and not blocking
 		if(playerState == PlayerState.Free && !isBlocking)
 		{
-			// Player is injured from the attack
-			// TODO: Adjust player health and set state to flinching
-
 			knightHealth.SetHealth (knightHealth.GetHealth () - damage);	// Set health to current health minus the attack's damage
 			playerState = PlayerState.Flinching;
 			isFlinching = true;

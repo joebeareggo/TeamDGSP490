@@ -100,15 +100,6 @@ public class EnemyController : MonoBehaviour {
 			isFlinching = true;	// Avoid flinch loop
 		}
 
-		if(target.GetComponent<KnightController>().playerState == KnightController.PlayerState.Attacking
-		   && playerState != PlayerState.Dodging)
-		{
-			playerState = PlayerState.Dodging;
-			dodgeDirection.x = -1.0f;
-			dodgeDirection.y = 0.0f;
-			isDodging = true;
-		}
-
 		// Handle player state
 		switch(playerState)
 		{
@@ -191,7 +182,6 @@ public class EnemyController : MonoBehaviour {
 
 		// Face the player and move towards them
 		transform.LookAt (target.transform.position);
-		transform.Translate (new Vector3(0.0f, 0.0f, 2.0f * Time.deltaTime));
 	}
 	
 	/*
