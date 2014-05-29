@@ -43,6 +43,7 @@ public class KnightController : MonoBehaviour {
 	int isBlockingHash = Animator.StringToHash ("isBlocking");	// Player block hash
 	int isDeadHash = Animator.StringToHash ("isDead");	// Player dead hash
 	int isDyingHash = Animator.StringToHash ("isDying");	// Player dying hash
+	int blockedAttackHash = Animator.StringToHash ("blockedAttack");	// Player blocked attack hash
 
 	// Conditional variables
 	bool isIdle;		// Player isn't moving
@@ -54,6 +55,7 @@ public class KnightController : MonoBehaviour {
 	bool isBlocking;	// Player is blocking
 	bool isDead;		// Player is dead
 	bool isDying;		// Player is dying
+	bool blockedAttack;	// Player blocked attack
 
 	// Timers
 	float restTimer;	// Time in free state
@@ -82,6 +84,7 @@ public class KnightController : MonoBehaviour {
 		isBlocking = false;	// Initiate player not blocking
 		isDead = false;	// Initiate player alive
 		isDying = false;	// Initiate player alive
+		blockedAttack = false;	// Initiate player not blocking attack
 
 		restTimer = 0.0f;	// Initiate rest timer to zero
 		dodgeTimer = 0.0f;	// Initiate dodge timer to zero
@@ -336,6 +339,8 @@ public class KnightController : MonoBehaviour {
 		vMovement = 0.0f;
 		movement = Vector2.zero;
 
+		blockedAttack = false;	// Reset blocked attack state
+
 		// Reset rest timer if not in 'Free' or 'Flinching' states
 		if(playerState != PlayerState.Free && playerState != PlayerState.Flinching)
 		{
@@ -444,6 +449,7 @@ public class KnightController : MonoBehaviour {
 		anim.SetBool (isBlockingHash, isBlocking);
 		anim.SetBool (isDeadHash, isDead);
 		anim.SetBool (isDyingHash, isDying);
+		anim.SetBool (blockedAttackHash, blockedAttack);
 	}
 
 	// Can the player attack?
@@ -514,6 +520,7 @@ public class KnightController : MonoBehaviour {
 			if(CanBlock (source))
 			{
 				knightHealth.SetStamina (knightHealth.GetStamina () - 20.0f);	// Reduce stamina
+				blockedAttack = true;	// Enable blocked attack animation
 			}
 		}
 		// Player is flinching
