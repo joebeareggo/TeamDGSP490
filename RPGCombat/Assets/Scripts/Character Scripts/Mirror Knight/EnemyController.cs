@@ -2,15 +2,21 @@
 using System.Collections;
 
 public class EnemyController : MonoBehaviour {
-
+	
 	Animator anim;
 
+	// Knight target
+	GameObject target;
+	KnightController targetController;
+	KnightHealth targetHealth;
+	
 	// Player Stats object
 	EnemyHealth enemyHealth;
 	
 	// Player variables
-	float pMoveSpeed = 3.0f;	// Base movement speed
-	GameObject target;	// Enemy target
+	float pMoveSpeed = 180000.0f;
+	float pDamage = 25.0f;
+	string attackType;	// Player attack type
 	
 	// State variables
 	public enum PlayerState { Free, Attacking, Flinching, Dodging, Dead };	// Player states
@@ -24,6 +30,7 @@ public class EnemyController : MonoBehaviour {
 	
 	// Animator state hash variables
 	int attackStateHash = Animator.StringToHash ("Base Layer.Attack");	// Attack state
+	int heavyAttackStateHash = Animator.StringToHash ("Base Layer.Heavy Attack");	// Heavy attack state
 	int dodgeStateHash = Animator.StringToHash ("Base Layer.Dodge");	// Dodge state
 	int flinchStateHash = Animator.StringToHash ("Base Layer.Flinch");	// Flinch state
 	int dyingStateHash = Animator.StringToHash ("Base Layer.Dying");	// Dying state
@@ -41,6 +48,7 @@ public class EnemyController : MonoBehaviour {
 	int isBlockingHash = Animator.StringToHash ("isBlocking");	// Player block hash
 	int isDeadHash = Animator.StringToHash ("isDead");	// Player dead hash
 	int isDyingHash = Animator.StringToHash ("isDying");	// Player dying hash
+	int blockedAttackHash = Animator.StringToHash ("blockedAttack");	// Player blocked attack hash
 	
 	// Conditional variables
 	bool isIdle;		// Player isn't moving
@@ -52,20 +60,28 @@ public class EnemyController : MonoBehaviour {
 	bool isBlocking;	// Player is blocking
 	bool isDead;		// Player is dead
 	bool isDying;		// Player is dying
+	bool blockedAttack;	// Player blocked attack
 	
 	// Timers
 	float restTimer;	// Time in free state
-	
+	float dodgeTimer;	// Time for dodge physics
+	float attackTimer;	// Time for attack to hit
+	float blockTimer;	// Time to stall for blocked attack
+
 	// Use this for initialization
 	void Start () {
 		anim = GetComponent<Animator> ();	// Animator component
-		enemyHealth = GetComponent<EnemyHealth> ();	// enemyHealth component
+		enemyHealth = GetComponent<EnemyHealth> ();	// EnemyHealth component
 
+		// Target variables
+		target = GameObject.FindGameObjectWithTag ("Knight");
+		targetController = target.GetComponent<KnightController> ();
+		targetHealth = target.GetComponent<KnightHealth> ();
+		
 		playerState = PlayerState.Free;	// Initiate player state to 'Free'
-
-		// Initiate target
-		target = GameObject.FindGameObjectWithTag ("Knight");	// Set target to hero
-
+		
+		attackType = "Basic";	// Initiate attack type to basic
+		
 		// Initiate movement variables
 		hMovement = 0.0f;
 		vMovement = 0.0f;
@@ -79,8 +95,12 @@ public class EnemyController : MonoBehaviour {
 		isBlocking = false;	// Initiate player not blocking
 		isDead = false;	// Initiate player alive
 		isDying = false;	// Initiate player alive
+		blockedAttack = false;	// Initiate player not blocking attack
 		
 		restTimer = 0.0f;	// Initiate rest timer to zero
+		dodgeTimer = 0.0f;	// Initiate dodge timer to zero
+		attackTimer = 0.0f;	// Initiate attack timer to zero
+		blockTimer = 0.0f;	// Initiate block timer to zero
 	}
 	
 	// Update is called once per frame
@@ -88,7 +108,7 @@ public class EnemyController : MonoBehaviour {
 		
 		ResetVariables ();	// Reset necessary variables
 		
-		//UserInput ();	// Get user input
+		CombatAI ();	// Get user input
 		
 		// Player death
 		if(enemyHealth.GetHealth () <= 0 && !isDead)
@@ -99,7 +119,7 @@ public class EnemyController : MonoBehaviour {
 			
 			isFlinching = true;	// Avoid flinch loop
 		}
-
+		
 		// Handle player state
 		switch(playerState)
 		{
@@ -149,19 +169,13 @@ public class EnemyController : MonoBehaviour {
 				if(isSprinting && enemyHealth.GetStamina () > 0.0f)
 				{
 					restTimer = 0.0f;	// Reset rest timer
-					movement *= 2.0f;	// Increase movement speed
+					movement *= 2.5f;	// Increase movement speed
 					
 					enemyHealth.SetStamina (enemyHealth.GetStamina () - 0.25f);	// Reduce player stamina
 				}
 				else
 				{
 					isSprinting = false;	// Player can't sprint backwards
-					
-					// Slow movement for blocking
-					if(isBlocking)
-					{
-						movement *= 0.0f;
-					}
 				}
 			}
 			else if(vMovement < 0)
@@ -177,11 +191,39 @@ public class EnemyController : MonoBehaviour {
 			isSprinting = false;	// Player cannot be sprinting
 		}
 		
+		// Disable movement while blocking
+		if(isBlocking || blockedAttack)
+		{
+			movement *= 0.0f;
+		}
+		
+		BlockLogic ();	// Handle blocking logic
+		
 		// Move player
 		//transform.Translate (new Vector3(movement.x, 0.0f, movement.y) * Time.deltaTime * pMoveSpeed);
-
-		// Face the player and move towards them
-		transform.LookAt (target.transform.position);
+		//rigidbody.AddForce (new Vector3 (movement.x , 0.0f, movement.y) * Time.deltaTime * pMoveSpeed);
+		rigidbody.AddRelativeForce (new Vector3(movement.x, 0.0f, movement.y) * Time.deltaTime * pMoveSpeed);
+	}
+	
+	/*
+	 * Block Logic
+	 * 
+	 * Player is blocking an attack.
+	 * Must be in free state.
+	 */
+	void BlockLogic()
+	{
+		// Check if the player is blocking an attack
+		if(blockedAttack)
+		{
+			blockTimer += Time.deltaTime;	// Increase block timer by update interval
+		}
+		
+		if(blockTimer >= 0.3f)
+		{
+			blockedAttack = false;
+			blockTimer = 0.0f;
+		}
 	}
 	
 	/*
@@ -193,16 +235,53 @@ public class EnemyController : MonoBehaviour {
 	 */
 	void AttackingLogic()
 	{
+		// Set attack type
+		if(anim.GetCurrentAnimatorStateInfo(0).nameHash == attackStateHash)
+		{
+			attackType = "Basic";
+		}
+		else if(anim.GetCurrentAnimatorStateInfo(0).nameHash == heavyAttackStateHash)
+		{
+			attackType = "Heavy";
+		}
+		
 		// Ensure the animation has started
-		if (isAttacking && anim.GetCurrentAnimatorStateInfo (0).nameHash == attackStateHash)
+		if (isAttacking && (anim.GetCurrentAnimatorStateInfo (0).nameHash == attackStateHash
+		                    || anim.GetCurrentAnimatorStateInfo (0).nameHash == heavyAttackStateHash))
 		{
 			isAttacking = false;	// Set to false to avoid infinite attack loop
 		}
 		
 		// Check if an attack animation is done playing
-		if(!isAttacking && anim.GetCurrentAnimatorStateInfo(0).nameHash != attackStateHash)
+		//if(!isAttacking && anim.GetCurrentAnimatorStateInfo(0).nameHash != attackStateHash 
+		//   && anim.GetCurrentAnimatorStateInfo(0).nameHash != heavyAttackStateHash)
+		// Attacking trigger timer
+		if(attackTimer <= 0.60f && attackType == "Basic")
 		{
-			// Damage the player "Knight" tag
+			attackTimer += Time.deltaTime;	// Increase attack timer
+		}
+		else if(attackTimer <= 0.85f && attackType == "Heavy")
+		{
+			attackTimer += Time.deltaTime;	// Increase attack timer by update value
+		}
+		else
+		{
+			// Damage enemies
+			// TODO: Change to array type, compare distance, compare direction / range
+			GameObject knight = GameObject.FindGameObjectWithTag ("Knight");
+			KnightController knightController = knight.GetComponent<KnightController>();
+			
+			float dmg = 0.0f;
+			if(attackType == "Basic")
+			{
+				dmg = 25.0f;
+			}
+			else if(attackType == "Heavy")
+			{
+				dmg = 40.0f;
+			}
+			
+			knightController.TakeHit(new Vector2(transform.position.x, transform.position.z), 25.0f);
 			
 			playerState = PlayerState.Free;	// Set player state to 'Free'
 		}
@@ -240,12 +319,17 @@ public class EnemyController : MonoBehaviour {
 	 */
 	void DodgingLogic()
 	{
-		// Movement variables
-		hMovement = dodgeDirection.x;
-		vMovement = dodgeDirection.y;
-		movement = dodgeDirection;
-		transform.Translate (new Vector3(dodgeDirection.x * pMoveSpeed * 3.0f * Time.deltaTime, 0, 
-		                                 dodgeDirection.y * pMoveSpeed * 3.0f * Time.deltaTime));	// Dodge movement
+		dodgeTimer += Time.deltaTime;	// Increase dodge timer by update speed
+		
+		// Enable dodge timer so that the player doesn't slide after dodge
+		if(dodgeTimer <= 0.5f)
+		{
+			hMovement = dodgeDirection.x;
+			vMovement = dodgeDirection.y;
+			movement = dodgeDirection;
+			
+			rigidbody.AddRelativeForce (new Vector3 (dodgeDirection.x, 0.0f, dodgeDirection.y) * 4.0f * Time.deltaTime * pMoveSpeed);
+		}
 		
 		// Ensure the animation has started
 		if(isDodging && anim.GetCurrentAnimatorStateInfo (0).nameHash == dodgeStateHash)
@@ -258,6 +342,8 @@ public class EnemyController : MonoBehaviour {
 		{
 			playerState = PlayerState.Free;	// Set player state to 'Free'
 			dodgeDirection = Vector2.zero;	// Reset the dodge direction
+			
+			dodgeTimer = 0.0f;	// Reset dodge timer
 		}
 	}
 	
@@ -293,20 +379,80 @@ public class EnemyController : MonoBehaviour {
 		{
 			restTimer = 0.0f;
 		}
+		
+		// Reset attack timer
+		if(playerState != PlayerState.Attacking)
+		{
+			attackTimer = 0.0f;
+		}
+		
+		// Reset block timer
+		if(playerState != PlayerState.Free)
+		{
+			blockTimer = 0.0f;
+		}
 	}
 	
 	/*
-	 * User Input
+	 * Combat AI
 	 * 
-	 * This function handles keyboard and mouse events.
+	 * This function controls the combat AI.
 	 */
-	void UserInput()
+	void CombatAI()
 	{
-		// Movement variables
-		hMovement = Input.GetAxis ("Horizontal");
-		vMovement = Input.GetAxis ("Vertical");
-		movement = new Vector2 (hMovement, vMovement);
-		
+		// Face the target
+		// Player must be in free state
+		if(playerState == PlayerState.Free)
+		{
+			transform.LookAt (target.transform.position);
+		}
+
+		float dtop = (transform.position - target.transform.position).magnitude;	// Distance to play
+
+		// Initiate movement to zero
+		hMovement = 0.0f;
+		vMovement = 0.0f;
+
+		// Move towards the player if distance is too great
+		if(dtop > 2.0f)
+		{
+			// Already facing the player, so move forward
+			vMovement = 1.0f;
+			hMovement = 0.0f;
+		}
+
+		movement = new Vector2 (hMovement, vMovement);	// Movement vector
+
+		// Get distance to player
+		if(playerState == PlayerState.Free)
+		{
+			if(!isSprinting && dtop > 7.0f)
+			{
+				isSprinting = true;
+			}
+			else if(isSprinting && dtop <= 3.0f)
+			{
+				if(CanAttack ())
+				{
+					playerState = PlayerState.Attacking;
+					isAttacking = true;
+
+					enemyHealth.SetStamina (enemyHealth.GetStamina () - 15.0f);
+				}
+
+				isSprinting = false;
+			}
+			else if(!isSprinting && dtop <= 7.0f)
+			{
+				isSprinting = false;
+			}
+		}
+		else
+		{
+			isSprinting = false;
+		}
+
+		/*
 		// Attack on Left-Click
 		if(Input.GetMouseButtonDown (0))
 		{
@@ -322,7 +468,9 @@ public class EnemyController : MonoBehaviour {
 		
 		// Block on left-mouse hold
 		// Stamina required for block
-		if(Input.GetMouseButton (1) && enemyHealth.GetStamina () > 0.0f)
+		// Player state free
+		if(Input.GetMouseButton (1) && enemyHealth.GetStamina () > 0.0f
+		   && playerState == PlayerState.Free)
 		{
 			isBlocking = true;
 			
@@ -366,6 +514,7 @@ public class EnemyController : MonoBehaviour {
 		{
 			TakeHit (Vector2.zero, 30.0f);	// Function for player being attacked
 		}
+		*/
 	}
 	
 	/*
@@ -388,15 +537,17 @@ public class EnemyController : MonoBehaviour {
 		anim.SetBool (isBlockingHash, isBlocking);
 		anim.SetBool (isDeadHash, isDead);
 		anim.SetBool (isDyingHash, isDying);
+		anim.SetBool (blockedAttackHash, blockedAttack);
 	}
 	
 	// Can the player attack?
 	public bool CanAttack()
 	{
 		// Check for attack-capable states
-		// Player not blocking
 		// Player has stamina
-		if(playerState == PlayerState.Free && !isBlocking && enemyHealth.GetStamina() > 0)
+		// Player isn't blocking an attack
+		if(playerState == PlayerState.Free && enemyHealth.GetStamina() > 0
+		   && blockedAttack == false)
 		{
 			return true;
 		}
@@ -413,8 +564,10 @@ public class EnemyController : MonoBehaviour {
 		// Player isn't moving backwards
 		// Player is moving
 		// Player has stamina
+		// Player isn't blocking an attack
 		if(playerState == PlayerState.Free && vMovement >= 0.0f && 
-		   movement.magnitude > 0.0f && enemyHealth.GetStamina() > 0.0f)
+		   movement.magnitude > 0.0f && enemyHealth.GetStamina() > 0.0f
+		   && blockedAttack == false)
 		{
 			return true;
 		}
@@ -438,9 +591,6 @@ public class EnemyController : MonoBehaviour {
 		// Player is free and not blocking
 		if(playerState == PlayerState.Free && !isBlocking)
 		{
-			// Player is injured from the attack
-			// TODO: Adjust player health and set state to flinching
-			
 			enemyHealth.SetHealth (enemyHealth.GetHealth () - damage);	// Set health to current health minus the attack's damage
 			playerState = PlayerState.Flinching;
 			isFlinching = true;
@@ -462,6 +612,7 @@ public class EnemyController : MonoBehaviour {
 			if(CanBlock (source))
 			{
 				enemyHealth.SetStamina (enemyHealth.GetStamina () - 20.0f);	// Reduce stamina
+				blockedAttack = true;	// Enable blocked attack animation
 			}
 		}
 		// Player is flinching
@@ -486,7 +637,7 @@ public class EnemyController : MonoBehaviour {
 			
 			if(restTimer >= 3.0f)
 			{
-				enemyHealth.SetStamina (enemyHealth.GetStamina () + 1.0f);
+				enemyHealth.SetStamina (enemyHealth.GetStamina () + 30.0f * Time.deltaTime);
 			}
 		}
 	}

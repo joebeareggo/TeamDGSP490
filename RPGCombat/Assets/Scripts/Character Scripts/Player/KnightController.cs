@@ -61,6 +61,7 @@ public class KnightController : MonoBehaviour {
 	float restTimer;	// Time in free state
 	float dodgeTimer;	// Time for dodge physics
 	float attackTimer;	// Time for attack to hit
+	float blockTimer;	// Time to stall for blocked attack
 
 	// Use this for initialization
 	void Start () {
@@ -89,6 +90,7 @@ public class KnightController : MonoBehaviour {
 		restTimer = 0.0f;	// Initiate rest timer to zero
 		dodgeTimer = 0.0f;	// Initiate dodge timer to zero
 		attackTimer = 0.0f;	// Initiate attack timer to zero
+		blockTimer = 0.0f;	// Initiate block timer to zero
 	}
 	
 	// Update is called once per frame
@@ -180,15 +182,38 @@ public class KnightController : MonoBehaviour {
 		}
 
 		// Disable movement while blocking
-		if(isBlocking)
+		if(isBlocking || blockedAttack)
 		{
 			movement *= 0.0f;
 		}
+
+		BlockLogic ();	// Handle blocking logic
 
 		// Move player
 		//transform.Translate (new Vector3(movement.x, 0.0f, movement.y) * Time.deltaTime * pMoveSpeed);
 		//rigidbody.AddForce (new Vector3 (movement.x , 0.0f, movement.y) * Time.deltaTime * pMoveSpeed);
 		rigidbody.AddRelativeForce (new Vector3(movement.x, 0.0f, movement.y) * Time.deltaTime * pMoveSpeed);
+	}
+
+	/*
+	 * Block Logic
+	 * 
+	 * Player is blocking an attack.
+	 * Must be in free state.
+	 */
+	void BlockLogic()
+	{
+		// Check if the player is blocking an attack
+		if(blockedAttack)
+		{
+			blockTimer += Time.deltaTime;	// Increase block timer by update interval
+		}
+		
+		if(blockTimer >= 0.3f)
+		{
+			blockedAttack = false;
+			blockTimer = 0.0f;
+		}
 	}
 
 	/*
@@ -339,8 +364,6 @@ public class KnightController : MonoBehaviour {
 		vMovement = 0.0f;
 		movement = Vector2.zero;
 
-		blockedAttack = false;	// Reset blocked attack state
-
 		// Reset rest timer if not in 'Free' or 'Flinching' states
 		if(playerState != PlayerState.Free && playerState != PlayerState.Flinching)
 		{
@@ -351,6 +374,12 @@ public class KnightController : MonoBehaviour {
 		if(playerState != PlayerState.Attacking)
 		{
 			attackTimer = 0.0f;
+		}
+
+		// Reset block timer
+		if(playerState != PlayerState.Free)
+		{
+			blockTimer = 0.0f;
 		}
 	}
 
@@ -457,7 +486,9 @@ public class KnightController : MonoBehaviour {
 	{
 		// Check for attack-capable states
 		// Player has stamina
-		if(playerState == PlayerState.Free && knightHealth.GetStamina() > 0)
+		// Player isn't blocking an attack
+		if(playerState == PlayerState.Free && knightHealth.GetStamina() > 0
+		   && blockedAttack == false)
 		{
 			return true;
 		}
@@ -474,8 +505,10 @@ public class KnightController : MonoBehaviour {
 		// Player isn't moving backwards
 		// Player is moving
 		// Player has stamina
+		// Player isn't blocking an attack
 		if(playerState == PlayerState.Free && vMovement >= 0.0f && 
-		   movement.magnitude > 0.0f && knightHealth.GetStamina() > 0.0f)
+		   movement.magnitude > 0.0f && knightHealth.GetStamina() > 0.0f
+		   && blockedAttack == false)
 		{
 			return true;
 		}
