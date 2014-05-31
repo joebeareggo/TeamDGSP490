@@ -412,7 +412,7 @@ public class KnightController : MonoBehaviour {
 		// Stamina required for block
 		// Player state free
 		if(Input.GetMouseButton (1) && knightHealth.GetStamina () > 0.0f
-		   && playerState == PlayerState.Free)
+		   && playerState == PlayerState.Free || playerState == PlayerState.Dodging)
 		{
 			isBlocking = true;
 
