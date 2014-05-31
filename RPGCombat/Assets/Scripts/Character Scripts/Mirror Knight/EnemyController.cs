@@ -17,6 +17,8 @@ public class EnemyController : MonoBehaviour {
 	float pMoveSpeed = 180000.0f;
 	float pDamage = 25.0f;
 	string attackType;	// Player attack type
+	float sightRadius = 10.0f;	// Can see 10 units
+	float sightFOV = 120.0f;	// Can see 120 degrees
 	
 	// State variables
 	public enum PlayerState { Free, Attacking, Flinching, Dodging, Dead };	// Player states
@@ -104,7 +106,7 @@ public class EnemyController : MonoBehaviour {
 		attackTimer = 0.0f;	// Initiate attack timer to zero
 		blockTimer = 0.0f;	// Initiate block timer to zero
 
-		isActive = true;	// Initiate inactive
+		isActive = false;	// Initiate inactive
 	}
 	
 	// Update is called once per frame
@@ -398,134 +400,6 @@ public class EnemyController : MonoBehaviour {
 	}
 	
 	/*
-	 * Combat AI
-	 * 
-	 * This function controls the combat AI.
-	 */
-	void CombatAI()
-	{
-
-		if(isActive)
-		{
-			// Face the target
-			// Player must be in free state
-			if(playerState == PlayerState.Free)
-			{
-				transform.LookAt (target.transform.position);
-			}
-
-			float dtop = (transform.position - target.transform.position).magnitude;	// Distance to play
-
-			// Initiate movement to zero
-			hMovement = 0.0f;
-			vMovement = 0.0f;
-
-			// Move towards the player if distance is too great
-			if(dtop > 2.0f)
-			{
-				// Already facing the player, so move forward
-				vMovement = 1.0f;
-				hMovement = 0.0f;
-			}
-
-			movement = new Vector2 (hMovement, vMovement);	// Movement vector
-
-			// Get distance to player
-			if(playerState == PlayerState.Free)
-			{
-				if(!isSprinting && dtop > 7.0f)
-				{
-					isSprinting = true;
-				}
-				else if(isSprinting && dtop <= 3.0f)
-				{
-					if(CanAttack ())
-					{
-						playerState = PlayerState.Attacking;
-						isAttacking = true;
-
-						enemyHealth.SetStamina (enemyHealth.GetStamina () - 15.0f);
-					}
-
-					isSprinting = false;
-				}
-				else if(!isSprinting && dtop <= 7.0f)
-				{
-					isSprinting = false;
-				}
-			}
-			else
-			{
-				isSprinting = false;
-			}
-		}	// End if isActive
-
-		/*
-		// Attack on Left-Click
-		if(Input.GetMouseButtonDown (0))
-		{
-			// Check if our player is an attack-capable state
-			if(CanAttack())
-			{
-				playerState = PlayerState.Attacking;	// Set player state to 'Attacking'
-				isAttacking = true;	// Triggers the animation
-				
-				enemyHealth.SetStamina (enemyHealth.GetStamina () - 15.0f);	// Decrease stamina
-			}
-		}
-		
-		// Block on left-mouse hold
-		// Stamina required for block
-		// Player state free
-		if(Input.GetMouseButton (1) && enemyHealth.GetStamina () > 0.0f
-		   && playerState == PlayerState.Free)
-		{
-			isBlocking = true;
-			
-			// Reset rest timer
-			restTimer = 0.0f;
-		}
-		else
-		{
-			isBlocking = false;
-		}
-		
-		// Sprint on Left Shift
-		// Sprinting not allowed while blocking
-		if(Input.GetKey (KeyCode.LeftShift) && !isBlocking)
-		{
-			isSprinting = true;
-		}
-		else
-		{
-			isSprinting = false;
-		}
-		
-		// Dodge on space bar
-		if(Input.GetKeyDown (KeyCode.Space))
-		{
-			if(CanDodge())
-			{
-				playerState = PlayerState.Dodging;
-				isDodging = true;
-				
-				dodgeDirection = movement.normalized;	// Set dodge direction to the movement direction
-				
-				// Reduce stamina
-				enemyHealth.SetStamina (enemyHealth.GetStamina() - 20.0f);
-			}
-		}
-		
-		// Testing conditions
-		// Player flinch
-		if(Input.GetKeyDown (KeyCode.F))
-		{
-			TakeHit (Vector2.zero, 30.0f);	// Function for player being attacked
-		}
-		*/
-	}
-	
-	/*
 	 * Set Animator Conditionals
 	 * 
 	 * This function uses hash values to set all of the conditional 
@@ -648,5 +522,168 @@ public class EnemyController : MonoBehaviour {
 				enemyHealth.SetStamina (enemyHealth.GetStamina () + 30.0f * Time.deltaTime);
 			}
 		}
+	}
+
+	/*
+	 * Can See
+	 * 
+	 * This function performs raycasting to see if the target is in sight.
+	 */
+	bool CanSeeTarget()
+	{
+		Vector3 direction = target.transform.position - transform.position;	// Find the direction to the target
+		float angle = Vector3.Angle (direction, transform.forward);	// Get the angle of the direction
+
+		// Check to see if the target is in the field of view
+		if(angle < sightFOV * 0.5f)
+		{
+			RaycastHit hit;	// Raycast for intersection
+
+			// Check if the raycast hits the player
+			if(Physics.Raycast(transform.position + transform.up, direction.normalized, out hit, sightRadius))
+			{
+				// Raycast hit the target
+				if(hit.collider.gameObject == target)
+				{
+					Debug.Log ("Target spotted!");
+
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/*
+	 * Combat AI
+	 * 
+	 * This function controls the combat AI.
+	 */
+	void CombatAI()
+	{
+		float dtop = (transform.position - target.transform.position).magnitude;	// Distance to player
+
+		// Initiate movement to zero
+		hMovement = 0.0f;
+		vMovement = 0.0f;
+		
+		if(!isActive && CanSeeTarget ())
+		{
+			isActive = true;
+		}
+
+		if(isActive)
+		{
+			// Face the target
+			// Player must be in free state
+			if(playerState == PlayerState.Free)
+			{
+				transform.LookAt (target.transform.position);
+			}
+			
+			// Move towards the player if distance is too great
+			if(dtop > 2.0f)
+			{
+				// Already facing the player, so move forward
+				vMovement = 1.0f;
+				hMovement = 0.0f;
+			}
+			
+			movement = new Vector2 (hMovement, vMovement);	// Movement vector
+			
+			// Get distance to player
+			if(playerState == PlayerState.Free)
+			{
+				if(!isSprinting && dtop > 7.0f)
+				{
+					isSprinting = true;
+				}
+				else if(isSprinting && dtop <= 3.0f)
+				{
+					if(CanAttack ())
+					{
+						playerState = PlayerState.Attacking;
+						isAttacking = true;
+						
+						enemyHealth.SetStamina (enemyHealth.GetStamina () - 15.0f);
+					}
+					
+					isSprinting = false;
+				}
+				else if(!isSprinting && dtop <= 7.0f)
+				{
+					isSprinting = false;
+				}
+			}
+			else
+			{
+				isSprinting = false;
+			}
+		}	// End if isActive
+		
+		/*
+		// Attack on Left-Click
+		if(Input.GetMouseButtonDown (0))
+		{
+			// Check if our player is an attack-capable state
+			if(CanAttack())
+			{
+				playerState = PlayerState.Attacking;	// Set player state to 'Attacking'
+				isAttacking = true;	// Triggers the animation
+				
+				enemyHealth.SetStamina (enemyHealth.GetStamina () - 15.0f);	// Decrease stamina
+			}
+		}
+		
+		// Block on left-mouse hold
+		// Stamina required for block
+		// Player state free
+		if(Input.GetMouseButton (1) && enemyHealth.GetStamina () > 0.0f
+		   && playerState == PlayerState.Free)
+		{
+			isBlocking = true;
+			
+			// Reset rest timer
+			restTimer = 0.0f;
+		}
+		else
+		{
+			isBlocking = false;
+		}
+		
+		// Sprint on Left Shift
+		// Sprinting not allowed while blocking
+		if(Input.GetKey (KeyCode.LeftShift) && !isBlocking)
+		{
+			isSprinting = true;
+		}
+		else
+		{
+			isSprinting = false;
+		}
+		
+		// Dodge on space bar
+		if(Input.GetKeyDown (KeyCode.Space))
+		{
+			if(CanDodge())
+			{
+				playerState = PlayerState.Dodging;
+				isDodging = true;
+				
+				dodgeDirection = movement.normalized;	// Set dodge direction to the movement direction
+				
+				// Reduce stamina
+				enemyHealth.SetStamina (enemyHealth.GetStamina() - 20.0f);
+			}
+		}
+		
+		// Testing conditions
+		// Player flinch
+		if(Input.GetKeyDown (KeyCode.F))
+		{
+			TakeHit (Vector2.zero, 30.0f);	// Function for player being attacked
+		}
+		*/
 	}
 }

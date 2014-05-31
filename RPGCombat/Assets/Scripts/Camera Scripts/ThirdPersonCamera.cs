@@ -44,7 +44,8 @@ public class ThirdPersonCamera : MonoBehaviour {
 		}
 
 		// Check rotate-able states
-		if(targetController.playerState == KnightController.PlayerState.Free)
+		if(targetController.playerState == KnightController.PlayerState.Free ||
+		   targetController.playerState == KnightController.PlayerState.Dodging)
 		{
 			target.transform.Rotate (0, hMouse * mouseSensitivity * Time.deltaTime, 0);	// Rotate target left and right
 		}
