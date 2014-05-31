@@ -61,6 +61,8 @@ public class EnemyController : MonoBehaviour {
 	bool isDead;		// Player is dead
 	bool isDying;		// Player is dying
 	bool blockedAttack;	// Player blocked attack
+
+	bool isActive;		// Player is active
 	
 	// Timers
 	float restTimer;	// Time in free state
@@ -101,6 +103,8 @@ public class EnemyController : MonoBehaviour {
 		dodgeTimer = 0.0f;	// Initiate dodge timer to zero
 		attackTimer = 0.0f;	// Initiate attack timer to zero
 		blockTimer = 0.0f;	// Initiate block timer to zero
+
+		isActive = true;	// Initiate inactive
 	}
 	
 	// Update is called once per frame
@@ -400,57 +404,61 @@ public class EnemyController : MonoBehaviour {
 	 */
 	void CombatAI()
 	{
-		// Face the target
-		// Player must be in free state
-		if(playerState == PlayerState.Free)
+
+		if(isActive)
 		{
-			transform.LookAt (target.transform.position);
-		}
+			// Face the target
+			// Player must be in free state
+			if(playerState == PlayerState.Free)
+			{
+				transform.LookAt (target.transform.position);
+			}
 
-		float dtop = (transform.position - target.transform.position).magnitude;	// Distance to play
+			float dtop = (transform.position - target.transform.position).magnitude;	// Distance to play
 
-		// Initiate movement to zero
-		hMovement = 0.0f;
-		vMovement = 0.0f;
-
-		// Move towards the player if distance is too great
-		if(dtop > 2.0f)
-		{
-			// Already facing the player, so move forward
-			vMovement = 1.0f;
+			// Initiate movement to zero
 			hMovement = 0.0f;
-		}
+			vMovement = 0.0f;
 
-		movement = new Vector2 (hMovement, vMovement);	// Movement vector
-
-		// Get distance to player
-		if(playerState == PlayerState.Free)
-		{
-			if(!isSprinting && dtop > 7.0f)
+			// Move towards the player if distance is too great
+			if(dtop > 2.0f)
 			{
-				isSprinting = true;
+				// Already facing the player, so move forward
+				vMovement = 1.0f;
+				hMovement = 0.0f;
 			}
-			else if(isSprinting && dtop <= 3.0f)
+
+			movement = new Vector2 (hMovement, vMovement);	// Movement vector
+
+			// Get distance to player
+			if(playerState == PlayerState.Free)
 			{
-				if(CanAttack ())
+				if(!isSprinting && dtop > 7.0f)
 				{
-					playerState = PlayerState.Attacking;
-					isAttacking = true;
-
-					enemyHealth.SetStamina (enemyHealth.GetStamina () - 15.0f);
+					isSprinting = true;
 				}
+				else if(isSprinting && dtop <= 3.0f)
+				{
+					if(CanAttack ())
+					{
+						playerState = PlayerState.Attacking;
+						isAttacking = true;
 
-				isSprinting = false;
+						enemyHealth.SetStamina (enemyHealth.GetStamina () - 15.0f);
+					}
+
+					isSprinting = false;
+				}
+				else if(!isSprinting && dtop <= 7.0f)
+				{
+					isSprinting = false;
+				}
 			}
-			else if(!isSprinting && dtop <= 7.0f)
+			else
 			{
 				isSprinting = false;
 			}
-		}
-		else
-		{
-			isSprinting = false;
-		}
+		}	// End if isActive
 
 		/*
 		// Attack on Left-Click

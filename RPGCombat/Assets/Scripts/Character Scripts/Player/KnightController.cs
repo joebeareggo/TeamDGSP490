@@ -66,6 +66,7 @@ public class KnightController : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		anim = GetComponent<Animator> ();	// Animator component
+
 		knightHealth = GetComponent<KnightHealth> ();	// KnightStats component
 
 		playerState = PlayerState.Free;	// Initiate player state to 'Free'
