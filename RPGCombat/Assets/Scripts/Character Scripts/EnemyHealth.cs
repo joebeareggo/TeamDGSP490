@@ -11,7 +11,7 @@ public class EnemyHealth : MonoBehaviour {
 	
 	// Use this for initialization
 	void Start () {
-		currentHealth = maxHealth = 100.0f;		// Initiate health to 100
+		currentHealth = maxHealth = 500.0f;		// Initiate health to 100
 		currentStamina = maxStamina = 100.0f;	// Initiate stamina to 100
 	}
 	

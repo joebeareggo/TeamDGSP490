@@ -49,11 +49,13 @@
      <Compile Include="Assets\Scripts\Camera Scripts\ThirdPersonCamera.cs" />
      <Compile Include="Assets\Scripts\Character Scripts\EnemyHealth.cs" />
      <Compile Include="Assets\Scripts\Character Scripts\Mirror Knight\EnemyController.cs" />
+     <Compile Include="Assets\Scripts\Character Scripts\Mirror Knight\OldController.cs" />
      <Compile Include="Assets\Scripts\Character Scripts\Player\KnightController.cs" />
      <Compile Include="Assets\Scripts\Character Scripts\Player\KnightHealth.cs" />
      <Compile Include="Assets\Scripts\Level Scripts\LevelController.cs" />
-     <Compile Include="Assets\Terrain\0000acolormapterrainshaderfinal\Scripts\CustomTerrainScriptColorMap.cs" />
+     <Compile Include="Assets\Terrain\Scripts\CustomTerrainScriptColorMap.cs" />
      <Compile Include="Assets\Terrain\Standard Assets\Water (Basic)\Sources\Scripts\WaterSimple.cs" />
+     <None Include="Assets\Terrain\Resources\TerrainReplacementColorMap_noiftexturefetch.shader" />
      <None Include="Assets\Terrain\Standard Assets\Skyboxes\_skybox info.txt" />
      <None Include="Assets\Terrain\0000acolormapterrainshaderfinal\Resources\TerrainReplacementColorMap_noiftexturefetch.shader" />
      <None Include="Assets\Terrain\Standard Assets\Water (Basic)\Sources\Shaders\FX-Water Simple.shader" />

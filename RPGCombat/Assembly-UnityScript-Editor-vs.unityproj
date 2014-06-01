@@ -46,7 +46,8 @@
 	</Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Terrain\0000acolormapterrainshaderfinal\Scripts\Editor\applysplatmap_146.js" />
+     <Compile Include="Assets\Terrain\Scripts\Editor\applysplatmap_146.js" />
+     <None Include="Assets\Terrain\Resources\TerrainReplacementColorMap_noiftexturefetch.shader" />
      <None Include="Assets\Terrain\Standard Assets\Skyboxes\_skybox info.txt" />
      <None Include="Assets\Terrain\0000acolormapterrainshaderfinal\Resources\TerrainReplacementColorMap_noiftexturefetch.shader" />
      <None Include="Assets\Terrain\Standard Assets\Water (Basic)\Sources\Shaders\FX-Water Simple.shader" />
