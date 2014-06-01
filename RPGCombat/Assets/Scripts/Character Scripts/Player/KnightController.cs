@@ -52,7 +52,7 @@ public class KnightController : MonoBehaviour {
 	bool isDodging;		// Player is dodging
 	bool isSprinting;	// Player is sprinting
 	bool isFlinching;	// Player is flinching
-	bool isBlocking;	// Player is blocking
+	public bool isBlocking;	// Player is blocking
 	bool isDead;		// Player is dead
 	bool isDying;		// Player is dying
 	bool blockedAttack;	// Player blocked attack
