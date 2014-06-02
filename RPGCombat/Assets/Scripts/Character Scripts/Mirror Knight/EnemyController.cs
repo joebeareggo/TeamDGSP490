@@ -258,6 +258,8 @@ public class EnemyController : MonoBehaviour {
 		if(blockedAttack)
 		{
 			BlockAttack ();
+
+			aiTimer = 0.0f;
 		}
 		// Enable decision making
 		else
@@ -329,12 +331,75 @@ public class EnemyController : MonoBehaviour {
 					// Attacking range
 					if(DistanceToTarget() < 3.0f)
 					{
+						// make decision every .75 seconds
+						if(aiTimer >= 0.75f)
+						{
+							int rand = Random.Range (0, 4);
 
+							// 50% stay in block
+							if(rand == 0 || rand == 1)
+							{
+								isBlocking = true;
+								enemyState = EnemyState.Blocking;
+
+								aiTimer = 0.0f;
+							}
+							// 25% attack
+							else if(rand == 2)
+							{
+								isBlocking = false;
+								isAttacking = true;
+								enemyState = EnemyState.Attacking;
+
+								aiTimer = 0.0f;
+							}
+							// 25% dodge
+							else if(rand == 3)
+							{
+								isBlocking = false;
+								isDodging = true;
+								enemyState = EnemyState.Dodging;
+								aiTimer = 0.0f;
+							}
+						}
 					}
 					// Out of attacking range
 					else
 					{
+						// Decision every .75 seconds
+						if(aiTimer >= 0.75f)
+						{
+							// Enough stamina for a running attack
+							if(enemyHealth.GetStamina () > 40.0f)
+							{
+								int rand = Random.Range (0, 2);
 
+								// 50% rest in free
+								if(rand == 0)
+								{
+									isBlocking = false;
+									enemyState = EnemyState.Free;
+
+									aiTimer = 0.0f;
+								}
+								// 50% running attack
+								else if(rand == 1)
+								{
+									isBlocking = false;
+									isSprinting = true;
+									enemyState = EnemyState.RunningAttack;
+
+									aiTimer = 0.0f;
+								}
+							}
+							// Low stamina
+							else
+							{
+								// Try to rest and regain stamina
+								isBlocking = false;
+								enemyState = EnemyState.Free;
+							}
+						}
 					}
 				}
 				// Target is in the middle of an attacking
@@ -343,12 +408,68 @@ public class EnemyController : MonoBehaviour {
 					// Attacking range
 					if(DistanceToTarget() < 3.0f)
 					{
+						// Decision every .75 seconds
+						if(aiTimer >= 0.75)
+						{
+							// Lots of stamina
+							if(enemyHealth.GetStamina () > 40.0f)
+							{
+								int rand = Random.Range (0, 2);
 
+								// 50% block
+								if(rand == 0)
+								{
+									isBlocking = true;
+									enemyState = EnemyState.Blocking;
+
+									aiTimer = 0.0f;
+								}
+								// 50% dodge
+								else if(rand == 1)
+								{
+									isBlocking = false;
+									isDodging = true;
+									enemyState = EnemyState.Dodging;
+
+									aiTimer = 0.0f;
+								}
+							}
+							// Lower stamina
+							else
+							{
+								int rand = Random.Range (0, 3);
+
+								// 33% block
+								if(rand == 0)
+								{
+									isBlocking = true;
+									enemyState = EnemyState.Blocking;
+
+									aiTimer = 0.0f;
+								}
+								// 66% dodge
+								else if(rand == 1)
+								{
+									isBlocking = false;
+									isDodging = true;
+									enemyState = EnemyState.Dodging;
+
+									aiTimer = 0.0f;
+								}
+							}
+						}
 					}
 					// Out of attacking range
 					else
 					{
+						// Decision every .75 seconds
+						if(aiTimer >= 0.75f)
+						{
+							isBlocking = false;
+							enemyState = EnemyState.Free;
 
+							aiTimer = 0.0f;
+						}
 					}
 				}
 				// Target is in the middle of a dodge
@@ -357,12 +478,65 @@ public class EnemyController : MonoBehaviour {
 					// Attacking range
 					if(DistanceToTarget() < 3.0f)
 					{
+						// Decision every .75 seconds
+						if(aiTimer >= 0.75f)
+						{
+							int rand = Random.Range (0, 2);
 
+							// 50% blocking
+							if(rand == 0)
+							{
+								isBlocking = true;
+								enemyState = EnemyState.Blocking;
+
+								aiTimer = 0.0f;
+							}
+							// 50% attacking
+							else if(rand == 1)
+							{
+								isBlocking = false;
+								isAttacking = true;
+								enemyState = EnemyState.Attacking;
+
+								aiTimer = 0.0f;
+							}
+						}
 					}
-					// Out of atatcking range
+					// Out of attacking range
 					else
 					{
+						// Decision every .75 seconds
+						if(aiTimer >= 0.75f)
+						{
+							// Plenty of stamina
+							if(enemyHealth.GetStamina () > 40.0f)
+							{
+								int rand = Random.Range(0, 2);
 
+								// Run attack
+								if(rand == 0)
+								{
+									isBlocking = false;
+									isSprinting = true;
+									enemyState = EnemyState.RunningAttack;
+
+									aiTimer = 0.0f;
+								}
+								// Free
+								if(rand == 1)
+								{
+									isBlocking = false;
+									enemyState = EnemyState.Free;
+								}
+							}
+							// Low stamina
+							else
+							{
+								// Rest
+								isBlocking = false;
+								enemyState = EnemyState.Free;
+							}
+						}
 					}
 				}
 			}
@@ -371,6 +545,8 @@ public class EnemyController : MonoBehaviour {
 			{
 				isBlocking = false;
 				enemyState = EnemyState.Free;
+
+				aiTimer = 0.0f;
 			}
 		}
 	}
