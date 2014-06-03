@@ -84,7 +84,7 @@ public class EnemyController : MonoBehaviour {
 		targetController = target.GetComponent<KnightController> ();
 		targetHealth = target.GetComponent<KnightHealth> ();
 		
-		enemyState = EnemyState.Blocking;	// Initiate player state to 'Free'
+		enemyState = EnemyState.Free;	// Initiate player state to 'Free'
 		
 		attackType = "Basic";	// Initiate attack type to basic
 		
@@ -147,6 +147,8 @@ public class EnemyController : MonoBehaviour {
 		// Make sure AI has been activated
 		if(isActive)
 		{
+			Debug.Log (enemyState);
+
 			// Handle player state
 			switch(enemyState)
 			{
@@ -193,6 +195,249 @@ public class EnemyController : MonoBehaviour {
 		
 		// Face the target
 		transform.LookAt (target.transform.position);
+
+		// Free state AI logic
+		// Stamina isn't drained
+		if(enemyHealth.GetStamina () > 0.0f)
+		{
+			// Target is free and not blocking
+			if(targetController.playerState == KnightController.PlayerState.Free || 
+			   targetController.isBlocking == false)
+			{
+				// Attacking range
+				if(DistanceToTarget() < 3.0f)
+				{
+					// Make decisionevery .75 seconds
+					if(aiTimer >= 0.75f)
+					{
+						int rand = Random.Range (0, 3);
+						
+						// 50% attack
+						if(rand == 0)
+						{
+							isAttacking = true;
+							enemyState = EnemyState.Attacking;
+							
+							aiTimer = 0.0f;	// Reset timer
+						}
+						// 50% rest or block
+						else if(rand == 1 || rand == 2)
+						{
+							// Block if there is enough stamina to perform actions
+							if(enemyHealth.GetStamina () >= 40.0f)
+							{
+								isBlocking = true;
+								enemyState = EnemyState.Blocking;
+							}
+
+							aiTimer = 0.0f;
+						}
+					}
+				}
+				// Out of attacking range
+				else
+				{
+					// Enough stamina for a running attacking
+					if(enemyHealth.GetStamina () > 40.0f)
+					{
+						// Running attack
+						isSprinting = true;
+						enemyState = EnemyState.RunningAttack;
+						
+						aiTimer = 0.0f;
+					}
+					else
+					{
+						// Rest to regain stamina
+						enemyState = EnemyState.Free;
+						
+						aiTimer = 0.0f;
+					}
+				}
+			}
+			// Target is free and not blocking
+			else if(targetController.playerState == KnightController.PlayerState.Free ||
+			        targetController.isBlocking == true)
+			{
+				// Attacking range
+				if(DistanceToTarget() < 3.0f)
+				{
+					// make decision every .75 seconds
+					if(aiTimer >= 0.75f)
+					{
+						int rand = Random.Range (0, 4);
+						
+						// 25% block
+						if(rand == 0)
+						{
+							isBlocking = true;
+							enemyState = EnemyState.Blocking;							
+						}
+						// 25% attack
+						else if(rand == 1)
+						{
+							isAttacking = true;
+							enemyState = EnemyState.Attacking;							
+						}
+						// 25% dodge
+						else if(rand == 2)
+						{
+							isDodging = true;
+							enemyState = EnemyState.Dodging;
+						}
+
+						aiTimer = 0.0f;
+					}
+				}
+				// Out of attacking range
+				else
+				{
+					// Decision every .75 seconds
+					if(aiTimer >= 0.75f)
+					{
+						// Enough stamina for a running attack
+						if(enemyHealth.GetStamina () > 40.0f)
+						{
+							int rand = Random.Range (0, 2);
+							
+							// 50% rest in free
+							if(rand == 0)
+							{
+								isBlocking = false;
+								enemyState = EnemyState.Free;
+															}
+							// 50% running attack
+							else if(rand == 1)
+							{
+								isBlocking = false;
+								isSprinting = true;
+								enemyState = EnemyState.RunningAttack;
+							}
+
+							aiTimer = 0.0f;
+						}
+						// Low stamina
+						else
+						{
+							// Try to rest and regain stamina
+							isBlocking = false;
+							enemyState = EnemyState.Free;
+						}
+					}
+				}
+			}
+			// Target is in the middle of an attack
+			else if(targetController.playerState == KnightController.PlayerState.Attacking)
+			{
+				// Attacking range
+				if(DistanceToTarget() < 3.0f)
+				{
+					// Decision every .75 seconds
+					if(aiTimer >= 0.75)
+					{
+						int rand = Random.Range (0, 5);
+						
+						// 40% block
+						if(rand <= 1)	// 0 or 1
+						{
+							isBlocking = true;
+							enemyState = EnemyState.Blocking;							
+						}
+						// 40% dodge
+						else if(rand > 1 && rand <= 3)	// 2 or 3
+						{
+							isBlocking = false;
+							isDodging = true;
+							enemyState = EnemyState.Dodging;							
+						}
+
+						// 20% do nothing
+
+						aiTimer = 0.0f;
+					}
+				}
+				// Out of attacking range
+				else
+				{
+					// Decision every .75 seconds
+					if(aiTimer >= 0.75f)
+					{
+						isBlocking = false;
+						enemyState = EnemyState.Free;
+						
+						aiTimer = 0.0f;
+					}
+				}
+			}
+			// Target is in the middle of a dodge
+			else if(targetController.playerState == KnightController.PlayerState.Dodging)
+			{
+				// Attacking range
+				if(DistanceToTarget() < 3.0f)
+				{
+					// Decision every .75 seconds
+					if(aiTimer >= 0.75f)
+					{
+						int rand = Random.Range (0, 2);
+						
+						// 25% blocking
+						if(rand == 0)
+						{
+							isBlocking = true;
+							enemyState = EnemyState.Blocking;							
+						}
+						// 25% attacking
+						else if(rand == 1)
+						{
+							isBlocking = false;
+							isAttacking = true;
+							enemyState = EnemyState.Attacking;							
+						}
+
+						// 50% do nothing
+
+						aiTimer = 0.0f;
+					}
+				}
+				// Out of attacking range
+				else
+				{
+					// Decision every .75 seconds
+					if(aiTimer >= 0.75f)
+					{
+						// Plenty of stamina
+						if(enemyHealth.GetStamina () > 40.0f)
+						{
+							int rand = Random.Range(0, 2);
+							
+							// 50% Run attack
+							if(rand == 0)
+							{
+								isBlocking = false;
+								isSprinting = true;
+								enemyState = EnemyState.RunningAttack;								
+							}
+
+							// 50% do nothing
+						}
+						// Low stamina
+						else
+						{
+							// Rest
+							isBlocking = false;
+							enemyState = EnemyState.Free;
+						}
+
+						aiTimer = 0.0f;
+					}
+				}
+			}
+		}
+		// No stamina
+		else
+		{
+
+		}
 		
 		// Player is moving
 		if(movement.magnitude > 0)
@@ -212,13 +457,6 @@ public class EnemyController : MonoBehaviour {
 					movement *= 2.5f;	// Increase movement speed
 					
 					enemyHealth.SetStamina (enemyHealth.GetStamina () - (30.0f * Time.deltaTime));	// Reduce player stamina
-					
-					// Attack if within range
-					if(dtop < 3.0f)
-					{
-						isAttacking = true;
-						enemyState = EnemyState.Attacking;
-					}
 				}
 				else
 				{
@@ -519,8 +757,6 @@ public class EnemyController : MonoBehaviour {
 									isBlocking = false;
 									isSprinting = true;
 									enemyState = EnemyState.RunningAttack;
-
-									aiTimer = 0.0f;
 								}
 								// Free
 								if(rand == 1)
@@ -528,6 +764,8 @@ public class EnemyController : MonoBehaviour {
 									isBlocking = false;
 									enemyState = EnemyState.Free;
 								}
+
+								aiTimer = 0.0f;
 							}
 							// Low stamina
 							else
@@ -617,9 +855,7 @@ public class EnemyController : MonoBehaviour {
 			}
 			
 			targetController.TakeHit(new Vector2(transform.position.x, transform.position.z), 25.0f);	// Damage player
-			
-			
-			// TODO: AI decide next state
+
 			enemyState = EnemyState.Free;	// Set player state to 'Free'
 		}
 	}
@@ -683,7 +919,23 @@ public class EnemyController : MonoBehaviour {
 		// TODO: Add timer
 		if(!isFlinching && anim.GetCurrentAnimatorStateInfo(0).nameHash != flinchStateHash)
 		{
-			// TODO: Change state
+			if(enemyHealth.GetStamina() > 0.0f)
+			{
+				int rand = Random.Range (0, 2);
+
+				// 50% dodge
+				if(rand == 0)
+				{
+					isDodging = true;
+					enemyState = EnemyState.Dodging;
+				}
+				// 50% block
+				else if(rand == 1)
+				{
+					isBlocking = true;
+					enemyState = EnemyState.Blocking;
+				}
+			}
 		}
 	}
 	
@@ -707,6 +959,20 @@ public class EnemyController : MonoBehaviour {
 			hMovement = dodgeDirection.x;
 			vMovement = dodgeDirection.y;
 			movement = dodgeDirection;
+
+			if(dodgeDirection.x == 0.0f)
+			{
+				int rand = Random.Range (0, 2);
+
+				if(rand == 0)
+				{
+					dodgeDirection.x = -1.0f;
+				}
+				else if(rand == 1)
+				{
+					dodgeDirection.x = 1.0f;
+				}
+			}
 			
 			rigidbody.AddRelativeForce (new Vector3 (dodgeDirection.x, 0.0f, dodgeDirection.y) * 4.0f * Time.deltaTime * pMoveSpeed);
 		}
@@ -724,11 +990,11 @@ public class EnemyController : MonoBehaviour {
 			// Within attacking range
 			if(DistanceToTarget() < 3.0f)
 			{
-				int rand = Random.Range (0, 4);
-
 				// Stamina left over
 				if(enemyHealth.GetStamina () > 0.0f)
 				{
+					int rand = Random.Range (0, 4);
+
 					// 50% chance attack
 					if(rand == 0 || rand == 1)
 					{
@@ -822,6 +1088,12 @@ public class EnemyController : MonoBehaviour {
 		{
 			blockTimer = 0.0f;
 		}
+
+		// Reset dodge timer
+		if(enemyState != EnemyState.Dodging)
+		{
+			dodgeTimer = 0.0f;
+		}
 	}
 	
 	/*
@@ -870,7 +1142,45 @@ public class EnemyController : MonoBehaviour {
 	// Player is attacked
 	public void TakeHit(Vector2 source, float damage)
 	{
+		Debug.Log ("MK taking hit!");
 
+		// Player is free and not blocking
+		if(enemyState == EnemyState.Free && !isBlocking)
+		{
+			enemyHealth.SetHealth (enemyHealth.GetHealth () - damage);	// Set health to current health minus the attack's damage
+			enemyState = EnemyState.Flinching;
+			isFlinching = true;
+		}
+		// Player is attacking
+		else if(enemyState == EnemyState.Attacking)
+		{
+			// Player is injured from the attack
+			enemyHealth.SetHealth (enemyHealth.GetHealth () - damage);	// Take damage
+			enemyState = EnemyState.Flinching;	// Start flinching logic
+			isFlinching = true;		// Enable flinching
+			isAttacking = false;	// Set attackign to false
+		}
+		// Player is free and blocking
+		else if(enemyState == EnemyState.Free && isBlocking)
+		{
+			// Check if player can block attack
+			// i.e. is the player facing the attacking opponent
+			if(CanBlock (source))
+			{
+				enemyHealth.SetStamina (enemyHealth.GetStamina () - 20.0f);	// Reduce stamina
+				blockedAttack = true;	// Enable blocked attack animation
+			}
+		}
+		// Player is flinching
+		else if(enemyState == EnemyState.Flinching)
+		{
+			// Player can't be injured
+		}
+		// Player is dodging
+		else if(enemyState == EnemyState.Dodging)
+		{
+			// Player can't be injured
+		}
 	}
 	
 	// Stamina regeneration logic
