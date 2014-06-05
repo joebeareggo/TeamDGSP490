@@ -110,7 +110,7 @@ public class MKController : EnemyController {
 		attackType = AttackType.Basic;	// Initate attack type to  basic
 		attackDamageBasic = 25.0f;		// Set basic damage
 		attackDamageHeavy = 40.0f;		// Set heavy damage
-		attackRange = 5.0f;				// Attack range set to 3
+		attackRange = 6.0f;				// Attack range set to 3
 		attackAngle = 60.0f;			// 60 degree attack angle
 		
 		// Blocking variables
@@ -511,29 +511,29 @@ public class MKController : EnemyController {
 	 */
 	void AILogic()
 	{
-		CanSee ();	// Check if player can be seen
+		CanSee ();	// Check if player can be seen and set desination
 
 		// Face the player if possible
 		if(CanRotate ())
 		{
 			// TODO: Turn the character with a turn speed
-			transform.LookAt (destination);
+			transform.LookAt (new Vector3(destination.x, transform.position.y, destination.z));
 		}
 
 		// Handle AI for specific states
 		switch(enemyState)
 		{
 		case EnemyState.Free:
-
+			AIFree ();
 			break;
 		case EnemyState.Attacking:
-
+			AIAttacking();
 			break;
 		case EnemyState.Blocking:
-
+			AIBlocking ();
 			break;
 		case EnemyState.Dodging:
-
+			AIDodging ();
 			break;
 		}
 	}
@@ -541,7 +541,16 @@ public class MKController : EnemyController {
 	// AI while free
 	void AIFree()
 	{
-
+		// TODO: Move towards player until 2.0f
+		// TODO: Wait until magnitude is greater than 4.0f to move again
+		if((destination - transform.position).magnitude > 2.0f)
+		{
+			SetMovement (0.0f, 1.0f);	// Moving forward towards destination
+		}
+		else
+		{
+			SetMovement (0.0f, 0.0f);	// Stop moving
+		}
 	}
 
 	// AI while attacking
@@ -564,7 +573,19 @@ public class MKController : EnemyController {
 	
 	
 	/* * * * * * * * * * * * * * * Helper Functions * * * * * * * * * * * * * * * */
-	
+
+	/*
+	 * SetMovement
+	 * 
+	 * This method sets the movement variables
+	 */
+	void SetMovement(float x, float y)
+	{
+		hMovement = x;
+		vMovement = y;
+		movement = new Vector2 (x, y);
+	}
+
 	/*
 	 * TakeHit
 	 * 

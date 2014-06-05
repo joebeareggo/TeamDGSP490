@@ -100,7 +100,7 @@ public class KnightController : MonoBehaviour {
 		attackType = AttackType.Basic;	// Initate attack type to  basic
 		attackDamageBasic = 25.0f;		// Set basic damage
 		attackDamageHeavy = 40.0f;		// Set heavy damage
-		attackRange = 3.0f;				// Attack range set to 3
+		attackRange = 4.0f;				// Attack range set to 3
 		attackAngle = 60.0f;			// 60 degree attack angle
 
 		// Blocking variables
