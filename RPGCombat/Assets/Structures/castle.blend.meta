@@ -49,6 +49,14 @@ ModelImporter:
     100086: TunnelWall02
     100088: TunnelWall03
     100090: TunnelWall04
+    100092: Cube
+    100094: Cube_001
+    100096: Cube_002
+    100098: Cube_003
+    100100: Cube_004
+    100102: Cube_005
+    100104: Cube_006
+    100106: Cube_007
     400000: BigTower01
     400002: BigTower02
     400004: BigTower03
@@ -95,6 +103,14 @@ ModelImporter:
     400086: TunnelWall02
     400088: TunnelWall03
     400090: TunnelWall04
+    400092: Cube
+    400094: Cube_001
+    400096: Cube_002
+    400098: Cube_003
+    400100: Cube_004
+    400102: Cube_005
+    400104: Cube_006
+    400106: Cube_007
     2300000: BigTower01
     2300002: BigTower02
     2300004: BigTower03
@@ -140,6 +156,14 @@ ModelImporter:
     2300084: TunnelWall02
     2300086: TunnelWall03
     2300088: TunnelWall04
+    2300090: Cube
+    2300092: Cube_001
+    2300094: Cube_002
+    2300096: Cube_003
+    2300098: Cube_004
+    2300100: Cube_005
+    2300102: Cube_006
+    2300104: Cube_007
     3300000: BigTower01
     3300002: BigTower02
     3300004: BigTower03
@@ -185,6 +209,14 @@ ModelImporter:
     3300084: TunnelWall02
     3300086: TunnelWall03
     3300088: TunnelWall04
+    3300090: Cube
+    3300092: Cube_001
+    3300094: Cube_002
+    3300096: Cube_003
+    3300098: Cube_004
+    3300100: Cube_005
+    3300102: Cube_006
+    3300104: Cube_007
     4300000: SquareColumn01
     4300002: SquareColumn04
     4300004: SquareColumn03
@@ -230,6 +262,14 @@ ModelImporter:
     4300084: ExtWall08
     4300086: SmallTower08
     4300088: ExtWall07
+    4300090: Cube_007
+    4300092: Cube_006
+    4300094: Cube_005
+    4300096: Cube_004
+    4300098: Cube_003
+    4300100: Cube_002
+    4300102: Cube_001
+    4300104: Cube
     7400000: Default Take
     9500000: //RootNode
   materials:
