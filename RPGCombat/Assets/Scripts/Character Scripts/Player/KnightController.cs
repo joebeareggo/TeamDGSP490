@@ -1,397 +1,524 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+// TODO: Put this declaration in another file
+public enum AttackType { Basic, Heavy };	// Attack type enumeration
+
 public class KnightController : MonoBehaviour {
 
-	Animator anim;
-
-	// Player Stats object
-	KnightHealth knightHealth;
-
-	// Player variables
-	float pMoveSpeed = 180000.0f;
-	float pDamage = 25.0f;
-	string attackType;	// Player attack type
-
 	// State variables
-	public enum PlayerState { Free, Attacking, Flinching, Dodging, Dead };	// Player states
-	public PlayerState playerState;
+	public enum PlayerState { Free, Blocking, Attacking, Flinching, Dodging, Dead };	// Player state enumeration
+	public PlayerState playerState;	// Player state variable
+
+	Animator anim;	// Animator component
+
+	KnightHealth knightHealth;	// Health and stamina script
 
 	// Movement variables
-	float hMovement;	// Horizontal movement
-	float vMovement;	// Vertical movement
-	Vector2 movement;	// Movement vector
-	Vector2 dodgeDirection;	// direction for dodging
+	float moveSpeed;		// Movement speed
+	float hMovement;		// Horizontal movement
+	float vMovement;		// Vertical movement
+	Vector2 movement;		// Movement vector
+	Vector2 dodgeDirection;	// Dodge vector
 
-	// Animator state hash variables
-	int attackStateHash = Animator.StringToHash ("Base Layer.Attack");	// Attack state
-	int heavyAttackStateHash = Animator.StringToHash ("Base Layer.Heavy Attack");	// Heavy attack state
-	int dodgeStateHash = Animator.StringToHash ("Base Layer.Dodge");	// Dodge state
-	int flinchStateHash = Animator.StringToHash ("Base Layer.Flinch");	// Flinch state
-	int dyingStateHash = Animator.StringToHash ("Base Layer.Dying");	// Dying state
+	// Attack variables
+	AttackType attackType;						// Class attack type variable
+	float attackDamageBasic;					// Base attack damage
+	float attackDamageHeavy;					// Heavy attack damage
+	float attackRange;							// Attack range
+	float attackAngle;							// Angle of basic attack
 
-	// Animator conditional hash variables
-	int xVelocityHash = Animator.StringToHash ("xVelocity");	// Horizontal velocity hash
-	int zVelocityHash = Animator.StringToHash ("zVelocity");	// Vertical velocity hash
-	
-	int isIdleHash = Animator.StringToHash("isIdle");	// Idle hash
-	int movingForwardHash = Animator.StringToHash ("movingForward");	// Movement direction hash
-	int isAttackingHash = Animator.StringToHash ("isAttacking");	// Player attack hash
-	int isDodgingHash = Animator.StringToHash ("isDodging");	// Player dodge hash
-	int isSprintingHash = Animator.StringToHash ("isSprinting");	// Player sprint hash
-	int isFlinchingHash = Animator.StringToHash ("isFlinching");	// Player flinch hash
-	int isBlockingHash = Animator.StringToHash ("isBlocking");	// Player block hash
-	int isDeadHash = Animator.StringToHash ("isDead");	// Player dead hash
-	int isDyingHash = Animator.StringToHash ("isDying");	// Player dying hash
-	int blockedAttackHash = Animator.StringToHash ("blockedAttack");	// Player blocked attack hash
+	// Block variables
+	float blockAngle;	// Angle for blocking
 
 	// Conditional variables
-	bool isIdle;		// Player isn't moving
-	bool movingForward;	// Movement direction
-	bool isAttacking;	// Player is attacking
-	bool isDodging;		// Player is dodging
-	bool isSprinting;	// Player is sprinting
-	bool isFlinching;	// Player is flinching
-	public bool isBlocking;	// Player is blocking
-	bool isDead;		// Player is dead
-	bool isDying;		// Player is dying
-	bool blockedAttack;	// Player blocked attack
+	bool isIdle;			// Character is idle
+	bool movingForward;		// Character is moving forward
+	bool isBlocking;		// Character is blocking
+	bool isAttacking;		// Character is attacking
+	bool isDodging;			// Character is dodging
+	bool isFlinching;		// Character is flinching
+	bool isDying;			// Character is dying
+	bool isDead;			// Character is dead
+	bool isSprinting;		// Character is sprinting
+	bool blockedAttack;		// Character blocked an attack
+	bool continueAttack;	// Character is combo attacking
+
+	// Animator parameters
+	int xVelocityHash = Animator.StringToHash ("xVelocity");
+	int zVelocityHash = Animator.StringToHash ("zVelocity");
+	int isIdleHash = Animator.StringToHash ("isIdle");
+	int movingForwardHash = Animator.StringToHash ("movingForward");
+	int isBlockingHash = Animator.StringToHash ("isBlocking");
+	int isAttackingHash = Animator.StringToHash ("isAttacking");
+	int isDodgingHash = Animator.StringToHash ("isDodging");
+	int isFlinchingHash = Animator.StringToHash ("isFlinching");
+	int isDyingHash = Animator.StringToHash ("isDying");
+	int isDeadHash = Animator.StringToHash ("isDead");
+	int isSprintingHash = Animator.StringToHash ("isSprinting");
+	int blockedAttackHash = Animator.StringToHash ("blockedAttack");
+	int continueAttackHash = Animator.StringToHash ("continueAttack");
+
+	// Animator states
+	int dyingStateHash = Animator.StringToHash ("Base Layer.Dying");
 
 	// Timers
-	float restTimer;	// Time in free state
-	float dodgeTimer;	// Time for dodge physics
-	float attackTimer;	// Time for attack to hit
-	float blockTimer;	// Time to stall for blocked attack
+	float dodgeTimer;	// Dodge timer for applied force
+	float attackTimer;	// Attack timer for exiting state and halting movement
+	float blockTimer;	// Block timer for blocked attack recovery
+	float flinchTimer;	// Flinch timer for exiting flinch state
+
+	// Action times
+	float timeDodge;			// Time it takes to dodge
+	float timeFlinch;			// Time it takes to flinch
+	float timeBasicAttack;		// Time it takes for basic attack
+	float timeHeavyAttack;		// Time it takes for heavy attack
+	float timeBlockedAttack;	// Time it takes to block an attack
+	float timeInvincible;		// Time the character is invincible while dodging
+
+	// State-specific variables
+	bool attackRegistered;	// Used in the attack state logic to enable a delay timer after attack has registered
+	bool attackAfterDodge;	// Used in the dodge state to transition smoothly from dodge to attack
 
 	// Use this for initialization
 	void Start () {
-		anim = GetComponent<Animator> ();	// Animator component
 
-		knightHealth = GetComponent<KnightHealth> ();	// KnightStats component
+		anim = GetComponent<Animator> ();	// Get Animator component
 
-		playerState = PlayerState.Free;	// Initiate player state to 'Free'
+		knightHealth = GetComponent<KnightHealth> ();	// Get KnightHealth script component
 
-		attackType = "Basic";	// Initiate attack type to basic
+		playerState = PlayerState.Free;	// Initiate player state to free
 
-		// Initiate movement variables
-		hMovement = 0.0f;
-		vMovement = 0.0f;
-		movement = Vector2.zero;
-		dodgeDirection = Vector2.zero;
+		// Movement variables
+		moveSpeed = 180000.0f;			// Character movement speed
+		hMovement = 0.0f;				// Horizontal movement
+		vMovement = 0.0f;				// Vertical movement
+		movement = Vector2.zero;		// Movement vector
+		dodgeDirection = Vector2.zero;	// Dodge vector
 
-		isIdle = true;	// Initiate idle
-		movingForward = true;	// Initiate forward
-		isAttacking = false;	// Initiate player not attacking
-		isDodging = false;	// Initiate player not dodging
-		isBlocking = false;	// Initiate player not blocking
-		isDead = false;	// Initiate player alive
-		isDying = false;	// Initiate player alive
-		blockedAttack = false;	// Initiate player not blocking attack
+		// Attacking variables
+		attackType = AttackType.Basic;	// Initate attack type to  basic
+		attackDamageBasic = 25.0f;		// Set basic damage
+		attackDamageHeavy = 40.0f;		// Set heavy damage
+		attackRange = 3.0f;				// Attack range set to 3
+		attackAngle = 60.0f;			// 60 degree attack angle
 
-		restTimer = 0.0f;	// Initiate rest timer to zero
-		dodgeTimer = 0.0f;	// Initiate dodge timer to zero
-		attackTimer = 0.0f;	// Initiate attack timer to zero
-		blockTimer = 0.0f;	// Initiate block timer to zero
+		// Blocking variables
+		blockAngle = 90.0f;				// 90 degree blocking angle
+
+		// Conditional variables
+		isIdle = true;					// Character is idle
+		movingForward = true;			// Character moving forward
+		isBlocking = false;				// Character not blocking
+		isAttacking = false;			// Character not attacking
+		isDodging = false;				// Character not dodging
+		isFlinching = false;			// Character not flinching
+		isDying = false;				// Character not dying
+		isDead = false;					// Character not dead
+		isSprinting = false;			// Character not sprinting
+		blockedAttack = false;			// Character not recovering from block
+		continueAttack = false;			// Character not combo attacking
+
+		// Timers
+		dodgeTimer = 0.0f;
+		attackTimer = 0.0f;
+		blockTimer = 0.0f;
+		flinchTimer = 0.0f;
+
+		// Action times
+		timeDodge = 0.4f;
+		timeFlinch = 0.8f;
+		timeBasicAttack = 0.5f;
+		timeHeavyAttack = 0.85f;
+		timeBlockedAttack = 0.3f;
+		timeInvincible = 0.3f;
+
+		// State-specific variables
+		attackRegistered = false;
+		attackAfterDodge = false;
 	}
 	
 	// Update is called once per frame
 	void Update () {
 
-		ResetVariables ();	// Reset necessary variables
+		UserInput ();	// Handle keyboard and mouse input
 
-		UserInput ();	// Get user input
-
-		// Player death
-		if(knightHealth.GetHealth () <= 0 && !isDead)
-		{
-			playerState = PlayerState.Dead;	// Player is dead
-			isDying = true;
-			isDead = true;
-
-			isFlinching = true;	// Avoid flinch loop
-		}
-
-		// Handle player state
+		// State handler
 		switch(playerState)
 		{
-		case PlayerState.Free:
+		case  PlayerState.Free:
 			FreeLogic();
 			break;
-		case PlayerState.Attacking:
-			AttackingLogic ();
+		case PlayerState.Blocking:
+			BlockingLogic();
 			break;
-		case PlayerState.Flinching:
-			FlinchingLogic ();
+		case PlayerState.Attacking:
+			AttackingLogic();
 			break;
 		case PlayerState.Dodging:
-			DodgingLogic ();
+			DodgingLogic();
+			break;
+		case PlayerState.Flinching:
+			FlinchingLogic();
 			break;
 		case PlayerState.Dead:
-			DeathLogic();
+			DeadLogic();
 			break;
 		}
 
-		StaminaRegeneration ();
+		RegenerateStamina ();	// Regenerate stamina
 
-		SetAnimatorConditionals ();	// Set the conditional variables for the animator
+		SetAnimatorParameters ();	// Set parameters for the animator component
 	}
 
-	/*
-	 * Free State
-	 * 
-	 * Player can move freely.
-	 * Player is not attacking, flinching, or dodging.
-	 * Player can attack, flinch, or move.
-	 */
+	/* * * * * * * * * * * * * * * * * Logic Handling * * * * * * * * * * * * * * * * */
+
+	// Free state logic
 	void FreeLogic()
 	{
-		// Player is moving
+		// Character is moving
 		if(movement.magnitude > 0)
 		{
-			isIdle = false;
+			isIdle = false;	// Character no longer idle
 
 			// Check movement direction
-			if(vMovement >= 0)
+			if(vMovement >= 0.0f)
 			{
-				movingForward = true;
+				movingForward = true;	// Not moving backwards
 
-				// Check for sprint
-				// Player must have required stamina
+				// Is the player sprinting?
 				if(isSprinting && knightHealth.GetStamina () > 0.0f)
 				{
-					restTimer = 0.0f;	// Reset rest timer
-					movement *= 2.5f;	// Increase movement speed
+					movement *= 2.0f;	// Increase movement speed
 
-					knightHealth.SetStamina (knightHealth.GetStamina () - (30.0f * Time.deltaTime));	// Reduce player stamina
+					// Reduce stamina while sprinting
+					knightHealth.SetStamina (knightHealth.GetStamina () - (15.0f * Time.deltaTime));
 				}
+				// Isn't sprinting
 				else
 				{
-					isSprinting = false;	// Player can't sprint backwards
+					isSprinting = false;
 				}
 			}
-			else if(vMovement < 0)
+			else if(vMovement < 0.0f)
 			{
-				movingForward = false;	// Player is moving backward
-				isSprinting = false;	// Player cannot sprint backward
+				movingForward = false;	// Moving backwards
+				isSprinting = false;	// Can't sprint backwards
 			}
 		}
+		// Player isn't moving
 		else
 		{
-			isIdle = true;	// Player isn't moving
-			movingForward = true;	// Set forward as default position for idle
-			isSprinting = false;	// Player cannot be sprinting
+			isIdle = true;
+			movingForward = true;	// Default for idle state
+			isSprinting = false;
 		}
 
-		// Disable movement while blocking
-		if(isBlocking || blockedAttack)
-		{
-			movement *= 0.0f;
-		}
-
-		BlockLogic ();	// Handle blocking logic
-
-		// Move player
-		//transform.Translate (new Vector3(movement.x, 0.0f, movement.y) * Time.deltaTime * pMoveSpeed);
-		//rigidbody.AddForce (new Vector3 (movement.x , 0.0f, movement.y) * Time.deltaTime * pMoveSpeed);
-		rigidbody.AddRelativeForce (new Vector3(movement.x, 0.0f, movement.y) * Time.deltaTime * pMoveSpeed);
+		// Move the character
+		rigidbody.AddRelativeForce (new Vector3 (movement.x, 0.0f, movement.y) * Time.deltaTime * moveSpeed);
 	}
 
-	/*
-	 * Block Logic
-	 * 
-	 * Player is blocking an attack.
-	 * Must be in free state.
-	 */
-	void BlockLogic()
+	// Blocking state logic
+	void BlockingLogic()
 	{
+		// TODO: If hit with heavy attack by opponent, apply backwards force to the player during block duration
+
 		// Check if the player is blocking an attack
 		if(blockedAttack)
 		{
-			blockTimer += Time.deltaTime;	// Increase block timer by update interval
+			blockTimer += Time.deltaTime;	// Increase block timer by update time
 		}
-		
-		if(blockTimer >= 0.3f)
+
+		if(blockTimer >= timeBlockedAttack)
 		{
 			blockedAttack = false;
 			blockTimer = 0.0f;
 		}
+
+		// Change state if the player isn't blocking
+		if(!isBlocking && !blockedAttack)
+		{
+			ChangeToState(PlayerState.Free);
+		}
 	}
 
-	/*
-	 * Attacking State
-	 * 
-	 * Player is in the middle of an attack.
-	 * Player cannot move or dodge.
-	 * Player can flinch.
-	 */
+	// Attacking state logic
 	void AttackingLogic()
 	{
-		// Set attack type
-		if(anim.GetCurrentAnimatorStateInfo(0).nameHash == attackStateHash)
+		// Execute on state execution
+		if(attackTimer == 0.0f)
 		{
-			attackType = "Basic";
-		}
-		else if(anim.GetCurrentAnimatorStateInfo(0).nameHash == heavyAttackStateHash)
-		{
-			attackType = "Heavy";
+			continueAttack = false;	// Combo initially disabled
+
+			anim.SetBool (continueAttackHash, continueAttack);	// Disable combo animation
 		}
 
-		// Ensure the animation has started
-		if (isAttacking && (anim.GetCurrentAnimatorStateInfo (0).nameHash == attackStateHash
-		                    || anim.GetCurrentAnimatorStateInfo (0).nameHash == heavyAttackStateHash))
-		{
-			isAttacking = false;	// Set to false to avoid infinite attack loop
-		}
+		attackTimer += Time.deltaTime;
 
-		// Check if an attack animation is done playing
-		//if(!isAttacking && anim.GetCurrentAnimatorStateInfo(0).nameHash != attackStateHash 
-		//   && anim.GetCurrentAnimatorStateInfo(0).nameHash != heavyAttackStateHash)
-		// Attacking trigger timer
-		if(attackTimer <= 0.60f && attackType == "Basic")
+		// If the attack has not yet registered with opponents
+		if(!attackRegistered)
 		{
-			attackTimer += Time.deltaTime;	// Increase attack timer
-		}
-		else if(attackTimer <= 0.85f && attackType == "Heavy")
-		{
-			attackTimer += Time.deltaTime;	// Increase attack timer by update value
-		}
-		else
-		{
-			// Damage enemies
-			// TODO: Change to array type, compare distance, compare direction / range
-			GameObject enemy = GameObject.FindGameObjectWithTag ("Enemy");
-			EnemyController enemyController = enemy.GetComponent<EnemyController>();
-
-			float dmg = 0.0f;
-			if(attackType == "Basic")
+			// Basic attack time
+			if(attackType == AttackType.Basic && attackTimer < timeBasicAttack)
 			{
-				dmg = 25.0f;
+				// Do nothing
 			}
-			else if(attackType == "Heavy")
+			// Heavy attack time
+			else if(attackType == AttackType.Heavy && attackTimer < timeHeavyAttack)
 			{
-				dmg = 40.0f;
+				// Do nothing
 			}
+			// Register attack
+			else
+			{
+				float currentDamage = 0.0f;	// How much damage does this attack do?
 
-			enemyController.TakeHit(new Vector2(transform.position.x, transform.position.z), 25.0f);
+				// Reduce stamina
+				if(attackType == AttackType.Basic)
+				{
+					knightHealth.SetStamina (knightHealth.GetStamina () - 25.0f);
+					currentDamage = attackDamageBasic;
+				}
+				// Reduce more stamina for heavy attack
+				else if(attackType == AttackType.Heavy)
+				{
+					knightHealth.SetStamina (knightHealth.GetStamina () - 35.0f);
+					currentDamage = attackDamageHeavy;
+				}
 
-			playerState = PlayerState.Free;	// Set player state to 'Free'
+				attackRegistered = true;	// Attack was registered
+
+				GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+				foreach(GameObject enemy in enemies)
+				{
+					Vector3 direction = enemy.transform.position - transform.position;	// Get the direction to the enemy
+					float angle = Vector3.Angle(direction, transform.forward);	// Get the angle to the enemy
+
+					// If the enemy is within the attack FOV and within range of attack
+					if(angle < attackAngle * 0.5 && (enemy.transform.position - transform.position).magnitude <= attackRange)
+					{
+						RaycastHit hit;
+
+						// Check if the 
+						if(Physics.Raycast (transform.position + transform.up, direction.normalized, out hit, attackRange))
+						{
+							// Target isn't being obstructed by an object
+							if(hit.collider.gameObject == enemy)
+							{
+								Debug.Log ("Enemy hit!");
+
+								enemy.GetComponent<EnemyController>().TakeHit (transform.position, currentDamage, attackType);
+							}
+						}
+					}
+				}
+
+			}
+		}
+		// .3 second delay before automatic change to free state
+		else if(attackType == AttackType.Basic && attackTimer >= timeBasicAttack + 0.3f)
+		{
+			// Check if combo is active
+			if(continueAttack)
+			{
+				ChangeToState (PlayerState.Attacking);
+
+				anim.SetBool (continueAttackHash, continueAttack);	// Change to next attack
+			}
+			else
+				ChangeToState (PlayerState.Free);	// Refer back to free state
+		}
+		// .5 second delay before atomatic change to free state
+		else if(attackType == AttackType.Heavy && attackTimer >= timeHeavyAttack + 0.3f)
+		{
+			ChangeToState (PlayerState.Free);
 		}
 	}
 
-	/*
-	 * Flinching State
-	 * 
-	 * Player is recovering from an attack.
-	 * Player cannot move, dodge, or attack.
-	 */
-	void FlinchingLogic()
-	{
-		// TODO: Adjust logic for multiple types of recoveries (i.e. flinch, knock-back, knock-down)
-
-		// Ensure the animation has started'
-		if(isFlinching && anim.GetCurrentAnimatorStateInfo (0).nameHash == flinchStateHash)
-		{
-			isFlinching = false;	// Set to false to avoid infinite flinch loop
-		}
-
-		// Check if flinch animation is done playing
-		if(!isFlinching && anim.GetCurrentAnimatorStateInfo(0).nameHash != flinchStateHash)
-		{
-			playerState = PlayerState.Free;	// Set player state to 'Free'
-		}
-	}
-
-	/*
-	 * Dodging State
-	 * 
-	 * Player is dodging an attack.
-	 * Player cannot move, flinch, or attack.
-	 * Player is invincible.
-	 */
+	// Dodging state logic
 	void DodgingLogic()
 	{
-		dodgeTimer += Time.deltaTime;	// Increase dodge timer by update speed
-
-		// Enable dodge timer so that the player doesn't slide after dodge
-		if(dodgeTimer <= 0.5f)
+		// Reduce stamina upon entry
+		if(dodgeTimer == 0.0f)
 		{
-			hMovement = dodgeDirection.x;
-			vMovement = dodgeDirection.y;
-			movement = dodgeDirection;
+			attackAfterDodge = false;	// Dodge to attack initially disabled
 
-			rigidbody.AddRelativeForce (new Vector3 (dodgeDirection.x, 0.0f, dodgeDirection.y) * 4.0f * Time.deltaTime * pMoveSpeed);
+			knightHealth.SetStamina (knightHealth.GetStamina () - 15.0f);
 		}
 
-		// Ensure the animation has started
-		if(isDodging && anim.GetCurrentAnimatorStateInfo (0).nameHash == dodgeStateHash)
+		dodgeTimer += Time.deltaTime;	// Increase dodge timer
+
+		// Set directional movement for dodge animation
+		hMovement = dodgeDirection.x;
+		vMovement = dodgeDirection.y;
+		
+		// Enable physics for dodge and avoid sliding
+		if(dodgeTimer <= timeDodge)
 		{
-			isDodging = false;	// Set to false to avoid infinite dodge loop
+			// Add force relative to the character's rotation
+			rigidbody.AddRelativeForce (new Vector3(dodgeDirection.x, 0.0f, dodgeDirection.y) 
+			                            * 4.0f * Time.deltaTime * moveSpeed);
+		}
+		// Transition to attack if player attacked during dodge
+		else if(dodgeTimer > timeDodge + 0.15f && attackAfterDodge == true)
+		{
+			ChangeToState (PlayerState.Attacking);
+		}
+		// Dodge complete after
+		else if(dodgeTimer > timeDodge + 0.15f)
+		{
+			ChangeToState (PlayerState.Free);	// Change to free state
 		}
 
-		// Check if dodging animation is done playing
-		if(!isDodging && anim.GetCurrentAnimatorStateInfo (0).nameHash != dodgeStateHash)
-		{
-			playerState = PlayerState.Free;	// Set player state to 'Free'
-			dodgeDirection = Vector2.zero;	// Reset the dodge direction
 
-			dodgeTimer = 0.0f;	// Reset dodge timer
-		}
 	}
 
-	/*
-	 * Death State
-	 * 
-	 * Player cannot move, flinch, or attack.
-	 */
-	void DeathLogic()
+	// Flinching state logic
+	void FlinchingLogic()
 	{
-		if(isDying && anim.GetCurrentAnimatorStateInfo (0).nameHash == dyingStateHash)
-		{
-			isDying = false;	// Avoid death loop
-		}
+		// Check if character is dead
+		if (knightHealth.GetHealth () <= 0.0f)
+			ChangeToState (PlayerState.Dead);
 
-		isFlinching = false;	// Avoid flinching loop
+		flinchTimer += Time.deltaTime;
+
+		if(flinchTimer > timeFlinch + 0.3f)
+		{
+			ChangeToState (PlayerState.Free);	// Change to free state
+		}
 	}
 
-	/*
-	 * Reset Variables
-	 * 
-	 * This function resets all of the necessary variables.
-	 */
-	void ResetVariables()
+	// Dead state logic
+	void DeadLogic()
 	{
-		// Movement variables
-		hMovement = 0.0f;
-		vMovement = 0.0f;
-		movement = Vector2.zero;
+		isDying = false;
+	}
 
-		// Reset rest timer if not in 'Free' or 'Flinching' states
-		if(playerState != PlayerState.Free && playerState != PlayerState.Flinching)
-		{
-			restTimer = 0.0f;
-		}
 
-		// Reset attack timer
-		if(playerState != PlayerState.Attacking)
-		{
-			attackTimer = 0.0f;
-		}
+	/* * * * * * * * * * * * * * * * * State Handling * * * * * * * * * * * * * * * * */
 
-		// Reset block timer
-		if(playerState != PlayerState.Free)
+	/*
+	 * ChangeToState
+	 * 
+	 * Set variables for state change.
+	 */
+	void ChangeToState(PlayerState state)
+	{
+		switch(state)
 		{
-			blockTimer = 0.0f;
+		case  PlayerState.Free:
+			FreeStateChange();
+			break;
+		case PlayerState.Blocking:
+			BlockingStateChange();
+			break;
+		case PlayerState.Attacking:
+			AttackingStateChange();
+			break;
+		case PlayerState.Dodging:
+			DodgingStateChange();
+			break;
+		case PlayerState.Flinching:
+			FlinchingStateChange();
+			break;
+		case PlayerState.Dead:
+			DeadStateChange();
+			break;
 		}
 	}
 
+	// Change to free state
+	void FreeStateChange()
+	{
+		playerState = PlayerState.Free;
+
+		isAttacking = false;
+		isDodging = false;
+		isFlinching = false;
+		isBlocking = false;
+		blockedAttack = false;
+	}
+
+	// Change to blocking state
+	void BlockingStateChange()
+	{
+		playerState = PlayerState.Blocking;
+
+		isAttacking = false;
+		isDodging = false;
+		isSprinting = false;
+		isFlinching = false;
+		isBlocking = true;
+		blockedAttack = false;
+
+		blockTimer = 0.0f;
+	}
+
+	// Change to attacking state
+	void AttackingStateChange()
+	{
+		playerState = PlayerState.Attacking;
+
+		isAttacking = true;
+		isDodging = false;
+		isSprinting = false;
+		isFlinching = false;
+		isBlocking = false;
+		blockedAttack = false;
+
+		attackRegistered = false;
+
+		attackTimer = 0.0f;
+	}
+
+	// Change to dodging state
+	void DodgingStateChange()
+	{
+		playerState = PlayerState.Dodging;
+
+		isAttacking = false;
+		isDodging = true;
+		isFlinching = false;
+		isBlocking = false;
+		blockedAttack = false;
+
+		dodgeTimer = 0.0f;
+	}
+
+	// Change to flinching state
+	void FlinchingStateChange()
+	{
+		playerState = PlayerState.Flinching;
+
+		isAttacking = false;
+		isDodging = false;
+		isSprinting = false;
+		isFlinching = true;
+		isBlocking = false;
+		blockedAttack = false;
+
+		flinchTimer = 0.0f;
+	}
+
+	void DeadStateChange()
+	{
+		playerState = PlayerState.Dead;
+
+		isDying = true;
+		isDead = true;
+	}
+
+
+	/* * * * * * * * * * * * * * * User Input Handling * * * * * * * * * * * * * * */
+
 	/*
-	 * User Input
+	 * UserInput
 	 * 
-	 * This function handles keyboard and mouse events.
+	 * This method handles user input from the mouse and keyboard.
 	 */
 	void UserInput()
 	{
-		// Movement variables
+		// Movement
 		hMovement = Input.GetAxis ("Horizontal");
 		vMovement = Input.GetAxis ("Vertical");
 		movement = new Vector2 (hMovement, vMovement);
@@ -399,188 +526,347 @@ public class KnightController : MonoBehaviour {
 		// Attack on Left-Click
 		if(Input.GetMouseButtonDown (0))
 		{
-			// Check if our player is an attack-capable state
-			if(CanAttack())
-			{
-				playerState = PlayerState.Attacking;	// Set player state to 'Attacking'
-				isAttacking = true;	// Triggers the animation
-
-				knightHealth.SetStamina (knightHealth.GetStamina () - 15.0f);	// Decrease stamina
-			}
+			AttackInput ();	// Handle state change
 		}
 
-		// Block on left-mouse hold
-		// Stamina required for block
-		// Player state free
-		if(Input.GetMouseButton (1) && knightHealth.GetStamina () > 0.0f
-		   && playerState == PlayerState.Free || playerState == PlayerState.Dodging)
+		// Block on Right-Mouse hold
+		if(Input.GetMouseButton (1))
 		{
-			isBlocking = true;
-
-			// Reset rest timer
-			restTimer = 0.0f;
+			BlockingInput();	// Handle state change
 		}
+		// Right-Mouse is up
 		else
 		{
 			isBlocking = false;
 		}
 
-		// Sprint on Left Shift
-		// Sprinting not allowed while blocking
-		if(Input.GetKey (KeyCode.LeftShift) && !isBlocking)
+		// Sprint on Left-Shift
+		if(Input.GetKey (KeyCode.LeftShift))
 		{
 			isSprinting = true;
 		}
+		// Left-Shift is up
 		else
 		{
 			isSprinting = false;
 		}
 
-		// Dodge on space bar
+		// Dodge on Space Bar
 		if(Input.GetKeyDown (KeyCode.Space))
 		{
-			if(CanDodge())
-			{
-				playerState = PlayerState.Dodging;
-				isDodging = true;
-
-				dodgeDirection = movement.normalized;	// Set dodge direction to the movement direction
-
-				// Reduce stamina
-				knightHealth.SetStamina (knightHealth.GetStamina() - 20.0f);
-			}
+			DodgeInput();	// Handle state change
 		}
 
-		// Testing conditions
-		// Player flinch
+		// F key to test flinching
 		if(Input.GetKeyDown (KeyCode.F))
 		{
-			TakeHit (Vector2.zero, 30.0f);	// Function for player being attacked
+			TakeHit (transform.forward, 15.0f, AttackType.Basic);
+		}
+	}
+
+	// Can the character attack
+	void AttackInput()
+	{
+		// If player is already attacking, we don't need to determine the attack type
+		if(playerState != PlayerState.Attacking)
+		{
+			// Determine attack type
+			if (isSprinting)
+				attackType = AttackType.Heavy;
+			else
+				attackType = AttackType.Basic;
+		}
+
+		// Character must have stamina to attack
+		if (knightHealth.GetStamina () > 0.0f)
+		{
+			// Handle attack-capable states
+			switch(playerState)
+			{
+			case PlayerState.Free:
+				// Character can always attack in free state
+				ChangeToState (PlayerState.Attacking);
+				break;
+			case PlayerState.Blocking:
+				// Check if character is recovering from block
+				if(!blockedAttack)
+					ChangeToState (PlayerState.Attacking);
+				break;
+			case PlayerState.Dodging:
+				// Check if dodge is complete
+				if(dodgeTimer > timeDodge - 0.2f)
+					attackAfterDodge = true;
+				break;
+			case PlayerState.Flinching:
+				// Check if flinch is complete
+				if(flinchTimer > timeFlinch)
+					ChangeToState (PlayerState.Attacking);
+				break;
+			case PlayerState.Attacking:
+				//Check timer against attack type and trigger combo if capable.
+				if(attackType == AttackType.Basic && attackTimer > timeBasicAttack)
+					continueAttack = true;
+				break;
+			}
+		}
+	}
+
+	// Can the character block
+	void BlockingInput()
+	{
+		// Character must have stamina to block
+		if(knightHealth.GetStamina () > 0.0f)
+		{
+			// Handle block-capable states
+			switch(playerState)
+			{
+			case PlayerState.Free:
+				// Character can always block in free state
+				ChangeToState (PlayerState.Blocking);
+				break;
+			case PlayerState.Dodging:
+				// Check if dodge is complete
+				if(dodgeTimer > timeDodge)
+					ChangeToState (PlayerState.Blocking);
+				break;
+			case PlayerState.Flinching:
+				// Check if flinch is complete
+				if(flinchTimer > timeFlinch)
+					ChangeToState (PlayerState.Blocking);
+				break;
+			case PlayerState.Attacking:
+				if(attackType == AttackType.Basic && attackTimer > timeBasicAttack + 0.15f)
+					ChangeToState (PlayerState.Blocking);
+				else if(attackType == AttackType.Heavy && attackTimer > timeHeavyAttack + 0.15f)
+					ChangeToState(PlayerState.Blocking);
+				break;
+			}
+		}
+	}
+
+	// Can the character dodge
+	void DodgeInput()
+	{
+		// Character must have stamina to dodge
+		if(knightHealth.GetStamina () > 0.0f)
+		{
+			dodgeDirection = movement.normalized;	// Determine dodge direction
+
+			if(movement.magnitude == 0.0f)
+			{
+				dodgeDirection = new Vector2(0.0f, -1.0f);
+			}
+
+			// Handle dodge-capable states
+			switch(playerState)
+			{
+			case PlayerState.Free:
+				// Character can always dodge in free state
+				ChangeToState(PlayerState.Dodging);
+				break;
+			case PlayerState.Blocking:
+				if(!blockedAttack)
+					ChangeToState(PlayerState.Dodging);
+				break;
+			case PlayerState.Dodging:
+				// Check if current dodge is complete
+				if(dodgeTimer > timeDodge)
+					ChangeToState (PlayerState.Dodging);
+				break;
+			case PlayerState.Flinching:
+				// Check if flinch is complete
+				if(flinchTimer > timeFlinch)
+					ChangeToState (PlayerState.Dodging);
+				break;
+			case PlayerState.Attacking:
+				if(attackType == AttackType.Basic && attackTimer > timeBasicAttack + 0.15f)
+					ChangeToState (PlayerState.Dodging);
+				else if(attackType == AttackType.Heavy && attackTimer > timeHeavyAttack + 0.15f)
+					ChangeToState(PlayerState.Dodging);
+				break;
+			}
+		}
+	}
+
+
+	/* * * * * * * * * * * * * * * Helper Functions * * * * * * * * * * * * * * * */
+
+	/*
+	 * TakeHit
+	 * 
+	 * This method handles logic from being being attacked.
+	 */
+	public void TakeHit(Vector3 origin, float damage, AttackType type)
+	{
+		// Handle flinch-capable states
+		switch(playerState)
+		{
+		case PlayerState.Free:
+			// Character can always take damage in free state
+			TakeDamage (damage);
+			ChangeToState (PlayerState.Flinching);
+			break;
+		case PlayerState.Blocking:
+			// Is the character blocking in the direction of the attack?
+			if(CanBlock(origin))
+			{
+				// Character can only lose stamina when not already blocking an attack
+				if(!blockedAttack)
+				{
+					// Reduce stamina depending on attack type
+					// 35.0f for basic
+					if(type == AttackType.Basic)
+						knightHealth.SetStamina (knightHealth.GetStamina () - 35.0f);
+					// 55.0f for heavy
+					else if(type == AttackType.Heavy)
+					{
+						knightHealth.SetStamina (knightHealth.GetStamina () - 55.0f);
+						// TODO: Create state for character sliding back on heavy block
+					}
+					// Character has stamina remaining
+					if(knightHealth.GetStamina () > 0.0f)
+						blockedAttack = true;
+					// Character flinches if the block wastes all of his stamina
+					else
+						ChangeToState (PlayerState.Flinching);
+				}
+			}
+			// Character facing the wrong direction
+			else
+			{
+				TakeDamage (damage);
+				ChangeToState (PlayerState.Flinching);
+			}
+			break;
+		case PlayerState.Attacking:
+			// Character can always take damage while attacking
+			TakeDamage (damage);
+			ChangeToState (PlayerState.Flinching);
+			break;
+		case PlayerState.Dodging:
+			// Is the character invincible?
+			if(dodgeTimer > timeInvincible)
+			{
+				TakeDamage (damage);
+				// TODO: Instead of flinching, knock character on back
+				ChangeToState(PlayerState.Flinching);
+			}
+			break;
+		}
+	}
+
+	// Can the character block the attack?
+	bool CanBlock(Vector3 origin)
+	{
+		Vector3 direction = origin - transform.position;			// Direction to attack origin
+		float angle = Vector3.Angle (direction, transform.forward);	// Angle of origin from character
+
+		// Compare angle to block angle
+		if(angle < blockAngle * 0.5f)
+			return true;
+		else
+			return false;
+	}
+
+	/*
+	 * RegenerateStamina
+	 * 
+	 * This method controls the player's stamina regeneration.
+	 */
+	void RegenerateStamina()
+	{
+		// Regenerate stamina in free state
+		if(playerState == PlayerState.Free && isSprinting == false)
+		{
+			knightHealth.SetStamina (knightHealth.GetStamina() + (30.0f * Time.deltaTime));
+		}
+		// Regenerate stamina at 1/3 the rate in Blocking state
+		else if(playerState == PlayerState.Blocking)
+		{
+			knightHealth.SetStamina (knightHealth.GetStamina () + (10.0f * Time.deltaTime));
 		}
 	}
 
 	/*
-	 * Set Animator Conditionals
+	 * TakeDamage
 	 * 
-	 * This function uses hash values to set all of the conditional 
-	 * variables in the animator.
+	 * This method handles any damage dealt to the player.
 	 */
-	void SetAnimatorConditionals()
+	void TakeDamage(float damage)
+	{
+		knightHealth.SetHealth (knightHealth.GetHealth () - damage);
+
+		Debug.Log ("Knight hit with " + damage + " damage... " + knightHealth.GetHealth () + " remaining.");
+	}
+
+	/*
+	 * SetAnimatorParameters
+	 * 
+	 * This method sets all of the parameters for the animator component.
+	 */
+	void SetAnimatorParameters()
 	{
 		anim.SetFloat (xVelocityHash, hMovement);
 		anim.SetFloat (zVelocityHash, vMovement);
-
 		anim.SetBool (isIdleHash, isIdle);
 		anim.SetBool (movingForwardHash, movingForward);
+		anim.SetBool (isBlockingHash, isBlocking);
 		anim.SetBool (isAttackingHash, isAttacking);
 		anim.SetBool (isDodgingHash, isDodging);
 		anim.SetBool (isSprintingHash, isSprinting);
 		anim.SetBool (isFlinchingHash, isFlinching);
-		anim.SetBool (isBlockingHash, isBlocking);
-		anim.SetBool (isDeadHash, isDead);
 		anim.SetBool (isDyingHash, isDying);
+		anim.SetBool (isDeadHash, isDead);
 		anim.SetBool (blockedAttackHash, blockedAttack);
+		//anim.SetBool (continueAttackHash, continueAttack);	// Special case: we are setting this value in the attack state logic
 	}
 
-	// Can the player attack?
-	public bool CanAttack()
+	/*
+	 * CanRotate
+	 * 
+	 * This method determines when the character can rotate.
+	 */
+	public bool CanRotate()
 	{
-		// Check for attack-capable states
-		// Player has stamina
-		// Player isn't blocking an attack
-		if(playerState == PlayerState.Free && knightHealth.GetStamina() > 0
-		   && blockedAttack == false)
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
+		bool canRotate = false;	// Initiate false
 
-	// Can the player dodge?
-	public bool CanDodge()
-	{
-		// Check for dodge-capable states
-		// Player isn't moving backwards
-		// Player is moving
-		// Player has stamina
-		// Player isn't blocking an attack
-		if(playerState == PlayerState.Free && vMovement >= 0.0f && 
-		   movement.magnitude > 0.0f && knightHealth.GetStamina() > 0.0f
-		   && blockedAttack == false)
+		// Handle rotatable states
+		switch(playerState)
 		{
-			return true;
+		case PlayerState.Free:
+			// Character can always rotate in free state
+			canRotate = true;
+			break;
+		case PlayerState.Attacking:
+			// Character can rotate briefly at the beginning of the attack
+			if(attackType == AttackType.Basic && attackTimer <= 0.3f)
+				canRotate = true;
+			else if(attackType == AttackType.Heavy && attackTimer <= 0.5f)
+				canRotate = true;
+			else
+				canRotate = false;
+			break;
+		case PlayerState.Blocking:
+			// Character can rotate if not recovering from an attack
+			if(!blockedAttack)
+				canRotate = true;
+			else
+				canRotate = false;
+			break;
+		case PlayerState.Dodging:
+			// Character can always rotate while dodging
+			canRotate = true;
+			break;
+		case PlayerState.Flinching:
+			// Character can never rotate while flinching
+			canRotate = false;
+			break;
+		case PlayerState.Dead:
+			// Character can never rotate while flinching
+			canRotate = false;
+			break;
 		}
-		else
-		{
-			return false;
-		}
-	}
 
-	// Can the player block the attack?
-	public bool CanBlock(Vector2 source)
-	{
-		// TODO: Compare source to the player's rotation
-
-		return true;
-	}
-
-	// Player is attacked
-	public void TakeHit(Vector2 source, float damage)
-	{
-		// Player is free and not blocking
-		if(playerState == PlayerState.Free && !isBlocking)
-		{
-			knightHealth.SetHealth (knightHealth.GetHealth () - damage);	// Set health to current health minus the attack's damage
-			playerState = PlayerState.Flinching;
-			isFlinching = true;
-		}
-		// Player is attacking
-		else if(playerState == PlayerState.Attacking)
-		{
-			// Player is injured from the attack
-			knightHealth.SetHealth (knightHealth.GetHealth () - damage);	// Take damage
-			playerState = PlayerState.Flinching;	// Start flinching logic
-			isFlinching = true;		// Enable flinching
-			isAttacking = false;	// Set attackign to false
-		}
-		// Player is free and blocking
-		else if(playerState == PlayerState.Free && isBlocking)
-		{
-			// Check if player can block attack
-			// i.e. is the player facing the attacking opponent
-			if(CanBlock (source))
-			{
-				knightHealth.SetStamina (knightHealth.GetStamina () - 20.0f);	// Reduce stamina
-				blockedAttack = true;	// Enable blocked attack animation
-			}
-		}
-		// Player is flinching
-		else if(playerState == PlayerState.Flinching)
-		{
-			// Player can't be injured
-		}
-		// Player is dodging
-		else if(playerState == PlayerState.Dodging)
-		{
-			// Player can't be injured
-		}
-	}
-
-	// Stamina regeneration logic
-	public void StaminaRegeneration()
-	{
-		// Regeneration during 'Free' or 'Flinching' states
-		if(playerState == PlayerState.Free || playerState == PlayerState.Flinching)
-		{
-			restTimer += Time.deltaTime;	// Increase free state duration timer by delta time
-			
-			if(restTimer >= 3.0f)
-			{
-				knightHealth.SetStamina (knightHealth.GetStamina () + 30.0f * Time.deltaTime);
-			}
-		}
+		return canRotate;
 	}
 }
