@@ -23,6 +23,7 @@ public class MKController : EnemyController {
 	Vector2 movement;		// Movement vector
 	Vector2 dodgeDirection;	// Dodge vector
 	Vector3 destination;	// Character destination
+	float turnSpeed;		// Character's turn speed
 	
 	// Attack variables
 	AttackType attackType;						// Class attack type variable
@@ -64,6 +65,7 @@ public class MKController : EnemyController {
 	
 	// Animator states
 	int dyingStateHash = Animator.StringToHash ("Base Layer.Dying");
+	int attack2StateHash = Animator.StringToHash ("Base Layer.Attack2");
 	
 	// Timers
 	float dodgeTimer;	// Dodge timer for applied force
@@ -78,14 +80,24 @@ public class MKController : EnemyController {
 	float timeHeavyAttack;		// Time it takes for heavy attack
 	float timeBlockedAttack;	// Time it takes to block an attack
 	float timeInvincible;		// Time the character is invincible while dodging
+
+	// AI timers
+	float aiTimerAttack;		// Time to recover after performing an action
+	float aiDelayAttack;		// Time to delay before character can attack again
 	
 	// State-specific variables
 	bool attackRegistered;	// Used in the attack state logic to enable a delay timer after attack has registered
 	bool attackAfterDodge;	// Used in the dodge state to transition smoothly from dodge to attack
+	bool secondAttack;		// Used to test if the attack combo is on its second attack
 
 	// Sight variables
-	float sightRadius;		// How far can the character see?
-	
+	float sightRadius;			// How far can the character see?
+	float enableSightRadius;	// How far can the character see while inactive
+	float sightAngle;			// What is the character's field of view when inactive
+
+	// Active variable
+	bool isActive;			// Determines whether or not the AI is enabled
+
 	// Use this for initialization
 	void Start () {
 		
@@ -105,13 +117,14 @@ public class MKController : EnemyController {
 		movement = Vector2.zero;			// Movement vector
 		dodgeDirection = Vector2.zero;		// Dodge vector
 		destination = transform.position;	// Character destination
+		turnSpeed = 120.0f;					// Character's turn speed
 		
 		// Attacking variables
 		attackType = AttackType.Basic;	// Initate attack type to  basic
 		attackDamageBasic = 25.0f;		// Set basic damage
 		attackDamageHeavy = 40.0f;		// Set heavy damage
-		attackRange = 6.0f;				// Attack range set to 3
-		attackAngle = 60.0f;			// 60 degree attack angle
+		attackRange = 5.0f;				// Attack range set to 3
+		attackAngle = 120.0f;			// 120 degree attack angle
 		
 		// Blocking variables
 		blockAngle = 90.0f;				// 90 degree blocking angle
@@ -134,49 +147,66 @@ public class MKController : EnemyController {
 		attackTimer = 0.0f;
 		blockTimer = 0.0f;
 		flinchTimer = 0.0f;
+
+		// AI timers
+		aiTimerAttack = 0.0f;
+		aiDelayAttack = 2.0f;	// Delay attack 2.5 seconds
 		
 		// Action times
 		timeDodge = 0.4f;
 		timeFlinch = 0.8f;
-		timeBasicAttack = 0.5f;
-		timeHeavyAttack = 0.85f;
+		timeBasicAttack = 0.75f;
+		timeHeavyAttack = 1.275f;
 		timeBlockedAttack = 0.3f;
 		timeInvincible = 0.3f;
 		
 		// State-specific variables
 		attackRegistered = false;
 		attackAfterDodge = false;
+		secondAttack = false;
 
 		// Sight variables
-		sightRadius = 20.0f;
+		sightRadius = 20.0f;		// Sight radius is 20 when active
+		enableSightRadius = 10.0f;	// Sight radius is 10 when inactive
+		sightAngle = 90.0f;			// Sight angle is 45 degrees in either direction
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		
-		AILogic ();	// Handle AI decision making
-		
-		// State handler
-		switch(enemyState)
+
+		if(!isActive)
 		{
-		case  EnemyState.Free:
-			FreeLogic();
-			break;
-		case EnemyState.Blocking:
-			BlockingLogic();
-			break;
-		case EnemyState.Attacking:
-			AttackingLogic();
-			break;
-		case EnemyState.Dodging:
-			DodgingLogic();
-			break;
-		case EnemyState.Flinching:
-			FlinchingLogic();
-			break;
-		case EnemyState.Dead:
-			DeadLogic();
-			break;
+			isActive = CanEnableAI();
+		}
+
+		// Handle states and AI if character is active
+		if(isActive)
+		{
+			AITimers ();	// Handle AI timers
+			AILogic ();	// Handle AI decision making
+			
+			// State handler
+			switch(enemyState)
+			{
+			case  EnemyState.Free:
+				FreeLogic();
+				break;
+			case EnemyState.Blocking:
+				BlockingLogic();
+				break;
+			case EnemyState.Attacking:
+				AttackingLogic();
+				break;
+			case EnemyState.Dodging:
+				DodgingLogic();
+				break;
+			case EnemyState.Flinching:
+				FlinchingLogic();
+				break;
+			case EnemyState.Dead:
+				DeadLogic();
+				break;
+			}
 		}
 		
 		SetAnimatorParameters ();	// Set parameters for the animator component
@@ -268,21 +298,27 @@ public class MKController : EnemyController {
 		// If the attack has not yet registered with opponents
 		if(!attackRegistered)
 		{
-			float currentDamage = 0.0f;
-
 			// Basic attack time
 			if(attackType == AttackType.Basic && attackTimer < timeBasicAttack)
 			{
-				currentDamage = attackDamageBasic;
+				// Do nothing
 			}
 			// Heavy attack time
 			else if(attackType == AttackType.Heavy && attackTimer < timeHeavyAttack)
 			{
-				currentDamage = attackDamageHeavy;
+				// Do nothing
 			}
-			// Register attack
 			else
-			{	
+			{
+				// Determine attack damage
+				float currentDamage = 0.0f;
+
+				if(attackType == AttackType.Basic)
+					currentDamage = attackDamageBasic;
+				else if(attackType == AttackType.Heavy)
+					currentDamage = attackDamageHeavy;
+
+				// Register attack
 				attackRegistered = true;	// Attack was registered 
 
 				GameObject[] knights = GameObject.FindGameObjectsWithTag("Knight");
@@ -312,7 +348,7 @@ public class MKController : EnemyController {
 			}
 		}
 		// .3 second delay before automatic change to free state
-		else if(attackType == AttackType.Basic && attackTimer >= timeBasicAttack + 0.3f)
+		else if(attackType == AttackType.Basic && attackTimer >= timeBasicAttack + 0.45f)
 		{
 			// Check if combo is active
 			if(continueAttack)
@@ -325,7 +361,7 @@ public class MKController : EnemyController {
 				ChangeToState (EnemyState.Free);	// Refer back to free state
 		}
 		// .5 second delay before atomatic change to free state
-		else if(attackType == AttackType.Heavy && attackTimer >= timeHeavyAttack + 0.3f)
+		else if(attackType == AttackType.Heavy && attackTimer >= timeHeavyAttack + 0.45f)
 		{
 			ChangeToState (EnemyState.Free);
 		}
@@ -460,6 +496,7 @@ public class MKController : EnemyController {
 		blockedAttack = false;
 		
 		attackRegistered = false;
+		secondAttack = false;
 		
 		attackTimer = 0.0f;
 	}
@@ -505,6 +542,23 @@ public class MKController : EnemyController {
 	/* * * * * * * * * * * * * * * AI Logic * * * * * * * * * * * * * * * * * * * */
 
 	/*
+	 * AITimers
+	 * 
+	 * This method handles the AI timers that determine when actions can be performed.
+	 */
+	void AITimers()
+	{
+		if(enemyState != EnemyState.Attacking)
+		{
+			aiTimerAttack += Time.deltaTime;
+		}
+		else
+		{
+			aiTimerAttack = 0.0f;
+		}
+	}
+
+	/*
 	 * AILogic
 	 * 
 	 * This method handles the decision making for the character.
@@ -516,8 +570,11 @@ public class MKController : EnemyController {
 		// Face the player if possible
 		if(CanRotate ())
 		{
-			// TODO: Turn the character with a turn speed
-			transform.LookAt (new Vector3(destination.x, transform.position.y, destination.z));
+			Quaternion q = Quaternion.LookRotation (target.transform.position - transform.position);
+
+			transform.rotation = Quaternion.RotateTowards (transform.rotation, q, turnSpeed * Time.deltaTime);
+
+			//transform.LookAt (new Vector3(destination.x, transform.position.y, destination.z));
 		}
 
 		// Handle AI for specific states
@@ -543,7 +600,7 @@ public class MKController : EnemyController {
 	{
 		// TODO: Move towards player until 2.0f
 		// TODO: Wait until magnitude is greater than 4.0f to move again
-		if((destination - transform.position).magnitude > 2.0f)
+		if((destination - transform.position).magnitude > 3.0f)
 		{
 			SetMovement (0.0f, 1.0f);	// Moving forward towards destination
 		}
@@ -551,12 +608,31 @@ public class MKController : EnemyController {
 		{
 			SetMovement (0.0f, 0.0f);	// Stop moving
 		}
+
+		// Attack if within range && rested
+		if(DistanceTo (target) < attackRange && aiTimerAttack > aiDelayAttack)
+		{
+			ChangeToState (EnemyState.Attacking);
+		}
 	}
 
 	// AI while attacking
 	void AIAttacking()
 	{
+		if(attackType == AttackType.Basic && attackTimer > timeBasicAttack)
+		{
+			if(!secondAttack)
+				secondAttack = anim.GetCurrentAnimatorStateInfo(0).nameHash == attack2StateHash;
 
+			if(DistanceTo (target) < attackRange && !secondAttack)
+				continueAttack = true;
+			else if(secondAttack)
+				continueAttack = false;
+		}
+		else if(attackType == AttackType.Heavy && attackTimer > timeHeavyAttack)
+		{
+
+		}
 	}
 
 	// AI while blocking
@@ -573,6 +649,15 @@ public class MKController : EnemyController {
 	
 	
 	/* * * * * * * * * * * * * * * Helper Functions * * * * * * * * * * * * * * * */
+
+	/* DistanceTo
+	 * 
+	 * Find the distance to an object.
+ */
+	float DistanceTo(GameObject go)
+	{
+		return (go.transform.position - transform.position).magnitude;
+	}
 
 	/*
 	 * SetMovement
@@ -593,6 +678,12 @@ public class MKController : EnemyController {
 	 */
 	public override void TakeHit(Vector3 origin, float damage, AttackType type)
 	{
+		// If character is not yet active, become active
+		if(!isActive)
+		{
+			isActive = true;
+		}
+
 		// Handle flinch-capable states
 		switch(enemyState)
 		{
@@ -727,7 +818,7 @@ public class MKController : EnemyController {
 	}
 
 	/*
-	 * CanSeeTarget
+	 * CanSee
 	 * 
 	 * This method uses raycasting to find the target's location.
 	 * The target's location is used to move the character and set
@@ -746,6 +837,45 @@ public class MKController : EnemyController {
 			{
 				destination = target.transform.position;
 
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/*
+	 * CanEnableAI
+	 * 
+	 * This method is used to enable the AI if the player is within the character's
+	 * field of view or is too close to the character.
+	 */
+	bool CanEnableAI()
+	{
+		Vector3 direction = target.transform.position - transform.position;
+		float angle = Vector3.Angle (direction, transform.forward);
+
+		// If the target is within the field of view
+		if(angle < sightAngle * 0.5)
+		{
+			RaycastHit hit;
+
+			// Check if the target is within sight range and not obstructed by other objects
+			if(Physics.Raycast (transform.position + transform.up, direction.normalized, out hit, enableSightRadius))
+			{
+				if(hit.collider == target)
+				{
+					Debug.Log ("Knight spotted!");
+
+					return true;
+				}
+			}
+		}
+		// If the target is within 1 unit from the character and no objects are obstructing it
+		else if(DistanceTo(target) < 1.0f)
+		{
+			if(CanSee ())
+			{
 				return true;
 			}
 		}

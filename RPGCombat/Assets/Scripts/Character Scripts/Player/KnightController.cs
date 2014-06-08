@@ -716,11 +716,11 @@ public class KnightController : MonoBehaviour {
 					// Reduce stamina depending on attack type
 					// 35.0f for basic
 					if(type == AttackType.Basic)
-						knightHealth.SetStamina (knightHealth.GetStamina () - 35.0f);
+						knightHealth.SetStamina (knightHealth.GetStamina () - 45.0f);
 					// 55.0f for heavy
 					else if(type == AttackType.Heavy)
 					{
-						knightHealth.SetStamina (knightHealth.GetStamina () - 55.0f);
+						knightHealth.SetStamina (knightHealth.GetStamina () - 80.0f);
 						// TODO: Create state for character sliding back on heavy block
 					}
 					// Character has stamina remaining
@@ -778,12 +778,12 @@ public class KnightController : MonoBehaviour {
 		// Regenerate stamina in free state
 		if(playerState == PlayerState.Free && isSprinting == false)
 		{
-			knightHealth.SetStamina (knightHealth.GetStamina() + (30.0f * Time.deltaTime));
+			knightHealth.SetStamina (knightHealth.GetStamina() + (25.0f * Time.deltaTime));
 		}
 		// Regenerate stamina at 1/3 the rate in Blocking state
 		else if(playerState == PlayerState.Blocking)
 		{
-			knightHealth.SetStamina (knightHealth.GetStamina () + (10.0f * Time.deltaTime));
+			knightHealth.SetStamina (knightHealth.GetStamina () + (5.0f * Time.deltaTime));
 		}
 	}
 
