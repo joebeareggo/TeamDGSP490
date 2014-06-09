@@ -57,6 +57,11 @@ ModelImporter:
     100102: Cube_005
     100104: Cube_006
     100106: Cube_007
+    100108: Cylinder
+    100110: Cylinder_001
+    100112: Cylinder_002
+    100114: Cylinder_003
+    100116: Cube_000
     400000: BigTower01
     400002: BigTower02
     400004: BigTower03
@@ -111,6 +116,11 @@ ModelImporter:
     400102: Cube_005
     400104: Cube_006
     400106: Cube_007
+    400108: Cylinder
+    400110: Cylinder_001
+    400112: Cylinder_002
+    400114: Cylinder_003
+    400116: Cube_000
     2300000: BigTower01
     2300002: BigTower02
     2300004: BigTower03
@@ -164,6 +174,11 @@ ModelImporter:
     2300100: Cube_005
     2300102: Cube_006
     2300104: Cube_007
+    2300106: Cylinder
+    2300108: Cylinder_001
+    2300110: Cylinder_002
+    2300112: Cylinder_003
+    2300114: Cube_000
     3300000: BigTower01
     3300002: BigTower02
     3300004: BigTower03
@@ -217,6 +232,11 @@ ModelImporter:
     3300100: Cube_005
     3300102: Cube_006
     3300104: Cube_007
+    3300106: Cylinder
+    3300108: Cylinder_001
+    3300110: Cylinder_002
+    3300112: Cylinder_003
+    3300114: Cube_000
     4300000: SquareColumn01
     4300002: SquareColumn04
     4300004: SquareColumn03
@@ -270,6 +290,11 @@ ModelImporter:
     4300100: Cube_002
     4300102: Cube_001
     4300104: Cube
+    4300106: Cylinder_003
+    4300108: Cylinder_002
+    4300110: Cylinder_001
+    4300112: Cylinder
+    4300114: Cube_000
     7400000: Default Take
     9500000: //RootNode
   materials:
