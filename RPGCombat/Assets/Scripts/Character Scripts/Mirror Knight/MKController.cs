@@ -5,7 +5,7 @@ public class MKController : EnemyController {
 	
 	// State variables
 	// TODO: Put these in the EnemyController base file
-	public enum EnemyState { Free, Blocking, Attacking, Flinching, Dodging, Dead };	// Enemy state enumeration
+	public enum EnemyState { Free, Blocking, Attacking, RunningAttack, Flinching, Dodging, Dead };	// Enemy state enumeration
 	public EnemyState enemyState;	// Enemy state variable
 	
 	Animator anim;	// Animator component
@@ -86,9 +86,11 @@ public class MKController : EnemyController {
 	float aiDelayAttack;		// Time to delay before character can attack again
 	
 	// State-specific variables
-	bool attackRegistered;	// Used in the attack state logic to enable a delay timer after attack has registered
-	bool attackAfterDodge;	// Used in the dodge state to transition smoothly from dodge to attack
-	bool secondAttack;		// Used to test if the attack combo is on its second attack
+	bool attackRegistered;				// Used in the attack state logic to enable a delay timer after attack has registered
+	bool attackAfterDodge;				// Used in the dodge state to transition smoothly from dodge to attack
+	bool secondAttack;					// Used to test if the attack combo is on its second attack
+	Vector3 runningAttackDestination;	// Used to determine the destination of the running attack
+	float strafeDirection;				// Direction to strafe in free state
 
 	// Sight variables
 	float sightRadius;			// How far can the character see?
@@ -111,13 +113,14 @@ public class MKController : EnemyController {
 		enemyState = EnemyState.Free;	// Initiate player state to free
 		
 		// Movement variables
-		moveSpeed = 120000.0f;				// Character movement speed
-		hMovement = 0.0f;					// Horizontal movement
-		vMovement = 0.0f;					// Vertical movement
-		movement = Vector2.zero;			// Movement vector
-		dodgeDirection = Vector2.zero;		// Dodge vector
-		destination = transform.position;	// Character destination
-		turnSpeed = 120.0f;					// Character's turn speed
+		moveSpeed = 120000.0f;					// Character movement speed
+		hMovement = 0.0f;						// Horizontal movement
+		vMovement = 0.0f;						// Vertical movement
+		movement = Vector2.zero;				// Movement vector
+		dodgeDirection = Vector2.zero;			// Dodge vector
+		destination = transform.position;		// Character destination
+		runningAttackDestination = destination;	// Character's running attack destination
+		turnSpeed = 120.0f;						// Character's turn speed
 		
 		// Attacking variables
 		attackType = AttackType.Basic;	// Initate attack type to  basic
@@ -158,12 +161,13 @@ public class MKController : EnemyController {
 		timeBasicAttack = 0.75f;
 		timeHeavyAttack = 1.275f;
 		timeBlockedAttack = 0.3f;
-		timeInvincible = 0.3f;
+		timeInvincible = 0.25f;
 		
 		// State-specific variables
 		attackRegistered = false;
 		attackAfterDodge = false;
 		secondAttack = false;
+		strafeDirection = 0.0f;	// Initiate no strafing
 
 		// Sight variables
 		sightRadius = 20.0f;		// Sight radius is 20 when active
@@ -176,7 +180,7 @@ public class MKController : EnemyController {
 
 		if(!isActive)
 		{
-			isActive = CanEnableAI();
+			EnableAI();
 		}
 
 		// Handle states and AI if character is active
@@ -196,6 +200,9 @@ public class MKController : EnemyController {
 				break;
 			case EnemyState.Attacking:
 				AttackingLogic();
+				break;
+			case EnemyState.RunningAttack:
+				RunningAttackLogic();
 				break;
 			case EnemyState.Dodging:
 				DodgingLogic();
@@ -366,6 +373,23 @@ public class MKController : EnemyController {
 			ChangeToState (EnemyState.Free);
 		}
 	}
+
+	// Running attack state logic
+	void RunningAttackLogic()
+	{
+		SetMovement (0.0f, 1.0f);	// Set movement forward
+
+		movement *= 6.0f;
+
+		// Move the character
+		rigidbody.AddRelativeForce (new Vector3 (movement.x, 0.0f, movement.y) * Time.deltaTime * moveSpeed);
+
+		if(DistanceTo (runningAttackDestination) < attackRange * 0.66f)
+		{
+			ChangeToState (EnemyState.Attacking);
+			SetMovement (0.0f, 0.0f);
+		}
+	}
 	
 	// Dodging state logic
 	void DodgingLogic()
@@ -444,6 +468,9 @@ public class MKController : EnemyController {
 		case EnemyState.Attacking:
 			AttackingStateChange();
 			break;
+		case EnemyState.RunningAttack:
+			RunningAttackStateChange();
+			break;
 		case EnemyState.Dodging:
 			DodgingStateChange();
 			break;
@@ -466,6 +493,9 @@ public class MKController : EnemyController {
 		isFlinching = false;
 		isBlocking = false;
 		blockedAttack = false;
+
+		// Set strafe
+		strafeDirection = Random.Range (-1, 2);
 	}
 	
 	// Change to blocking state
@@ -487,7 +517,7 @@ public class MKController : EnemyController {
 	void AttackingStateChange()
 	{
 		enemyState = EnemyState.Attacking;
-		
+
 		isAttacking = true;
 		isDodging = false;
 		isSprinting = false;
@@ -499,6 +529,27 @@ public class MKController : EnemyController {
 		secondAttack = false;
 		
 		attackTimer = 0.0f;
+
+		aiDelayAttack = Random.Range (1.5f, 3.0f);
+	}
+
+	// Change to running attack state
+	void RunningAttackStateChange()
+	{
+		enemyState = EnemyState.RunningAttack;
+
+		isAttacking = false;
+		isDodging = false;
+		isSprinting = true;
+		isFlinching = false;
+		isBlocking = false;
+		blockedAttack = false;
+
+		movingForward = true;
+		isIdle = false;
+
+		runningAttackDestination = target.transform.position;	// Set destination to current target position
+		transform.LookAt (runningAttackDestination);	// Look at destination
 	}
 	
 	// Change to dodging state
@@ -536,6 +587,12 @@ public class MKController : EnemyController {
 		
 		isDying = true;
 		isDead = true;
+		isFlinching = false;
+		isAttacking = false;
+		isDodging = false;
+		isSprinting = false;
+		isBlocking = false;
+		blockedAttack = false;
 	}
 
 
@@ -567,10 +624,16 @@ public class MKController : EnemyController {
 	{
 		CanSee ();	// Check if player can be seen and set desination
 
-		// Face the player if possible
+		// Set destination to running attack destination if in running attack state
+		if(enemyState == EnemyState.RunningAttack)
+		{
+			destination = runningAttackDestination;
+		}
+
+		// Face the destination
 		if(CanRotate ())
 		{
-			Quaternion q = Quaternion.LookRotation (target.transform.position - transform.position);
+			Quaternion q = Quaternion.LookRotation (destination - transform.position);
 
 			transform.rotation = Quaternion.RotateTowards (transform.rotation, q, turnSpeed * Time.deltaTime);
 
@@ -585,6 +648,9 @@ public class MKController : EnemyController {
 			break;
 		case EnemyState.Attacking:
 			AIAttacking();
+			break;
+		case EnemyState.RunningAttack:
+			AIRunningAttack();
 			break;
 		case EnemyState.Blocking:
 			AIBlocking ();
@@ -606,11 +672,12 @@ public class MKController : EnemyController {
 		}
 		else
 		{
-			SetMovement (0.0f, 0.0f);	// Stop moving
+			// SetMovement (0.0f, 0.0f);	// Stop moving
+			SetMovement (strafeDirection, 0.0f);	// Strafe
 		}
 
 		// Attack if within range && rested
-		if(DistanceTo (target) < attackRange && aiTimerAttack > aiDelayAttack)
+		if(DistanceTo (target.transform.position) < attackRange * 0.66f && aiTimerAttack > aiDelayAttack)
 		{
 			ChangeToState (EnemyState.Attacking);
 		}
@@ -624,7 +691,7 @@ public class MKController : EnemyController {
 			if(!secondAttack)
 				secondAttack = anim.GetCurrentAnimatorStateInfo(0).nameHash == attack2StateHash;
 
-			if(DistanceTo (target) < attackRange && !secondAttack)
+			if(DistanceTo (target.transform.position) < attackRange && !secondAttack)
 				continueAttack = true;
 			else if(secondAttack)
 				continueAttack = false;
@@ -633,6 +700,12 @@ public class MKController : EnemyController {
 		{
 
 		}
+	}
+
+	// AI running attack
+	void AIRunningAttack()
+	{
+
 	}
 
 	// AI while blocking
@@ -654,9 +727,9 @@ public class MKController : EnemyController {
 	 * 
 	 * Find the distance to an object.
  */
-	float DistanceTo(GameObject go)
+	float DistanceTo(Vector3 pos)
 	{
-		return (go.transform.position - transform.position).magnitude;
+		return (pos - transform.position).magnitude;
 	}
 
 	/*
@@ -775,6 +848,16 @@ public class MKController : EnemyController {
 	 */
 	public bool CanRotate()
 	{
+		// Increase turn speed for attack state
+		if(enemyState == EnemyState.Attacking)
+		{
+			turnSpeed = 360.0f;
+		}
+		else
+		{
+			turnSpeed = 120.0f;
+		}
+
 		bool canRotate = false;	// Initiate false
 		
 		// Handle rotatable states
@@ -850,7 +933,7 @@ public class MKController : EnemyController {
 	 * This method is used to enable the AI if the player is within the character's
 	 * field of view or is too close to the character.
 	 */
-	bool CanEnableAI()
+	void EnableAI()
 	{
 		Vector3 direction = target.transform.position - transform.position;
 		float angle = Vector3.Angle (direction, transform.forward);
@@ -863,23 +946,21 @@ public class MKController : EnemyController {
 			// Check if the target is within sight range and not obstructed by other objects
 			if(Physics.Raycast (transform.position + transform.up, direction.normalized, out hit, enableSightRadius))
 			{
-				if(hit.collider == target)
+				if(hit.collider.gameObject == target)
 				{
 					Debug.Log ("Knight spotted!");
 
-					return true;
+					isActive = true;
 				}
 			}
 		}
 		// If the target is within 1 unit from the character and no objects are obstructing it
-		else if(DistanceTo(target) < 1.0f)
+		else if(DistanceTo(target.transform.position) < 1.0f)
 		{
 			if(CanSee ())
 			{
-				return true;
+				isActive = true;
 			}
 		}
-
-		return false;
 	}
 }

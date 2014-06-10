@@ -2,6 +2,8 @@
 using System.Collections;
 
 public class KnightHealth : MonoBehaviour {
+	
+	KnightController knightController;	// Knight controller
 
 	// Player stats
 	float currentHealth;	// Current player health
@@ -11,6 +13,8 @@ public class KnightHealth : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		knightController = GetComponent<KnightController> ();
+
 		currentHealth = maxHealth = 100.0f;		// Initiate health to 100
 		currentStamina = maxStamina = 100.0f;	// Initiate stamina to 100
 	}
@@ -112,6 +116,9 @@ public class KnightHealth : MonoBehaviour {
 		if(value < 0)
 		{
 			currentStamina = 0;
+
+			// Trigger stamina delay
+			knightController.EmptyStaminaDelay();
 		}
 		// Stamina can't exceed maximum stamina
 		else if(value > maxStamina)
