@@ -63,10 +63,11 @@ public class KnightController : MonoBehaviour {
 	int dyingStateHash = Animator.StringToHash ("Base Layer.Dying");
 
 	// Timers
-	float dodgeTimer;	// Dodge timer for applied force
-	float attackTimer;	// Attack timer for exiting state and halting movement
-	float blockTimer;	// Block timer for blocked attack recovery
-	float flinchTimer;	// Flinch timer for exiting flinch state
+	float dodgeTimer;			// Dodge timer for applied force
+	float attackTimer;			// Attack timer for exiting state and halting movement
+	float blockTimer;			// Block timer for blocked attack recovery
+	float flinchTimer;			// Flinch timer for exiting flinch state
+	float emptyStaminaTimer;	// Time to delay stamina regeneration after it runs out
 
 	// Action times
 	float timeDodge;			// Time it takes to dodge
@@ -75,6 +76,7 @@ public class KnightController : MonoBehaviour {
 	float timeHeavyAttack;		// Time it takes for heavy attack
 	float timeBlockedAttack;	// Time it takes to block an attack
 	float timeInvincible;		// Time the character is invincible while dodging
+	float timeStaminaDelay;		// Time before stamina is regenerated again.
 
 	// State-specific variables
 	bool attackRegistered;	// Used in the attack state logic to enable a delay timer after attack has registered
@@ -124,6 +126,7 @@ public class KnightController : MonoBehaviour {
 		attackTimer = 0.0f;
 		blockTimer = 0.0f;
 		flinchTimer = 0.0f;
+		emptyStaminaTimer = 1.0f;
 
 		// Action times
 		timeDodge = 0.4f;
@@ -131,7 +134,8 @@ public class KnightController : MonoBehaviour {
 		timeBasicAttack = 0.5f;
 		timeHeavyAttack = 0.85f;
 		timeBlockedAttack = 0.3f;
-		timeInvincible = 0.3f;
+		timeInvincible = 0.25f;
+		timeStaminaDelay = 1.0f;
 
 		// State-specific variables
 		attackRegistered = false;
@@ -391,7 +395,10 @@ public class KnightController : MonoBehaviour {
 	// Dead state logic
 	void DeadLogic()
 	{
-		isDying = false;
+		if(isDying && anim.GetCurrentAnimatorStateInfo(0).nameHash == dyingStateHash)
+		{
+			isDying = false;
+		}
 	}
 
 
@@ -506,6 +513,12 @@ public class KnightController : MonoBehaviour {
 
 		isDying = true;
 		isDead = true;
+		isFlinching = false;
+		isAttacking = false;
+		isDodging = false;
+		isSprinting = false;
+		isBlocking = false;
+		blockedAttack = false;
 	}
 
 
@@ -775,16 +788,34 @@ public class KnightController : MonoBehaviour {
 	 */
 	void RegenerateStamina()
 	{
-		// Regenerate stamina in free state
-		if(playerState == PlayerState.Free && isSprinting == false)
+		// If there is no delay on the stamina
+		if(emptyStaminaTimer >= timeStaminaDelay)
 		{
-			knightHealth.SetStamina (knightHealth.GetStamina() + (25.0f * Time.deltaTime));
+			// Regenerate stamina in free state
+			if(playerState == PlayerState.Free && isSprinting == false)
+			{
+				knightHealth.SetStamina (knightHealth.GetStamina() + (25.0f * Time.deltaTime));
+			}
+			// Regenerate stamina at 1/3 the rate in Blocking state
+			else if(playerState == PlayerState.Blocking)
+			{
+				knightHealth.SetStamina (knightHealth.GetStamina () + (5.0f * Time.deltaTime));
+			}
 		}
-		// Regenerate stamina at 1/3 the rate in Blocking state
-		else if(playerState == PlayerState.Blocking)
+		else
 		{
-			knightHealth.SetStamina (knightHealth.GetStamina () + (5.0f * Time.deltaTime));
+			emptyStaminaTimer += Time.deltaTime;
 		}
+	}
+
+	/*
+	 * EmptyStaminaDelay
+	 * 
+	 * This method begins a timer that delays stamina regneration.
+	 */
+	public void EmptyStaminaDelay()
+	{
+		emptyStaminaTimer = 0.0f;
 	}
 
 	/*
