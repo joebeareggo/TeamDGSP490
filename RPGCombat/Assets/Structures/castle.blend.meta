@@ -62,6 +62,48 @@ ModelImporter:
     100112: Cylinder_002
     100114: Cylinder_003
     100116: Cube_000
+    100118: Circle
+    100120: Circle_001
+    100122: Circle_002
+    100124: Circle_003
+    100126: Circle_004
+    100128: Circle_005
+    100130: Circle_006
+    100132: Circle_007
+    100134: Circle_008
+    100136: Circle_009
+    100138: Circle_010
+    100140: Circle_011
+    100142: Circle_012
+    100144: Circle_013
+    100146: Cylinder_004
+    100148: Cylinder_005
+    100150: Cylinder_006
+    100152: Cylinder_007
+    100154: Cylinder_008
+    100156: Cylinder_009
+    100158: Cylinder_010
+    100160: Cylinder_011
+    100162: Cylinder_012
+    100164: Cylinder_013
+    100166: Cylinder_014
+    100168: Cylinder_015
+    100170: Cylinder_016
+    100172: Cylinder_017
+    100174: Cylinder_018
+    100176: Cylinder_019
+    100178: Cylinder_020
+    100180: Cylinder_021
+    100182: Cylinder_022
+    100184: Cylinder_023
+    100186: Cylinder_024
+    100188: Cylinder_025
+    100190: Cone
+    100192: Cone_001
+    100194: Cone_002
+    100196: Cone_003
+    100198: Cone_004
+    100200: Cone_005
     400000: BigTower01
     400002: BigTower02
     400004: BigTower03
@@ -121,6 +163,48 @@ ModelImporter:
     400112: Cylinder_002
     400114: Cylinder_003
     400116: Cube_000
+    400118: Circle
+    400120: Circle_001
+    400122: Circle_002
+    400124: Circle_003
+    400126: Circle_004
+    400128: Circle_005
+    400130: Circle_006
+    400132: Circle_007
+    400134: Circle_008
+    400136: Circle_009
+    400138: Circle_010
+    400140: Circle_011
+    400142: Circle_012
+    400144: Circle_013
+    400146: Cylinder_004
+    400148: Cylinder_005
+    400150: Cylinder_006
+    400152: Cylinder_007
+    400154: Cylinder_008
+    400156: Cylinder_009
+    400158: Cylinder_010
+    400160: Cylinder_011
+    400162: Cylinder_012
+    400164: Cylinder_013
+    400166: Cylinder_014
+    400168: Cylinder_015
+    400170: Cylinder_016
+    400172: Cylinder_017
+    400174: Cylinder_018
+    400176: Cylinder_019
+    400178: Cylinder_020
+    400180: Cylinder_021
+    400182: Cylinder_022
+    400184: Cylinder_023
+    400186: Cylinder_024
+    400188: Cylinder_025
+    400190: Cone
+    400192: Cone_001
+    400194: Cone_002
+    400196: Cone_003
+    400198: Cone_004
+    400200: Cone_005
     2300000: BigTower01
     2300002: BigTower02
     2300004: BigTower03
@@ -179,6 +263,48 @@ ModelImporter:
     2300110: Cylinder_002
     2300112: Cylinder_003
     2300114: Cube_000
+    2300116: Circle
+    2300118: Circle_001
+    2300120: Circle_002
+    2300122: Circle_003
+    2300124: Circle_004
+    2300126: Circle_005
+    2300128: Circle_006
+    2300130: Circle_007
+    2300132: Circle_008
+    2300134: Circle_009
+    2300136: Circle_010
+    2300138: Circle_011
+    2300140: Circle_012
+    2300142: Circle_013
+    2300144: Cylinder_004
+    2300146: Cylinder_005
+    2300148: Cylinder_006
+    2300150: Cylinder_007
+    2300152: Cylinder_008
+    2300154: Cylinder_009
+    2300156: Cylinder_010
+    2300158: Cylinder_011
+    2300160: Cylinder_012
+    2300162: Cylinder_013
+    2300164: Cylinder_014
+    2300166: Cylinder_015
+    2300168: Cylinder_016
+    2300170: Cylinder_017
+    2300172: Cylinder_018
+    2300174: Cylinder_019
+    2300176: Cylinder_020
+    2300178: Cylinder_021
+    2300180: Cylinder_022
+    2300182: Cylinder_023
+    2300184: Cylinder_024
+    2300186: Cylinder_025
+    2300188: Cone
+    2300190: Cone_001
+    2300192: Cone_002
+    2300194: Cone_003
+    2300196: Cone_004
+    2300198: Cone_005
     3300000: BigTower01
     3300002: BigTower02
     3300004: BigTower03
@@ -237,6 +363,48 @@ ModelImporter:
     3300110: Cylinder_002
     3300112: Cylinder_003
     3300114: Cube_000
+    3300116: Circle
+    3300118: Circle_001
+    3300120: Circle_002
+    3300122: Circle_003
+    3300124: Circle_004
+    3300126: Circle_005
+    3300128: Circle_006
+    3300130: Circle_007
+    3300132: Circle_008
+    3300134: Circle_009
+    3300136: Circle_010
+    3300138: Circle_011
+    3300140: Circle_012
+    3300142: Circle_013
+    3300144: Cylinder_004
+    3300146: Cylinder_005
+    3300148: Cylinder_006
+    3300150: Cylinder_007
+    3300152: Cylinder_008
+    3300154: Cylinder_009
+    3300156: Cylinder_010
+    3300158: Cylinder_011
+    3300160: Cylinder_012
+    3300162: Cylinder_013
+    3300164: Cylinder_014
+    3300166: Cylinder_015
+    3300168: Cylinder_016
+    3300170: Cylinder_017
+    3300172: Cylinder_018
+    3300174: Cylinder_019
+    3300176: Cylinder_020
+    3300178: Cylinder_021
+    3300180: Cylinder_022
+    3300182: Cylinder_023
+    3300184: Cylinder_024
+    3300186: Cylinder_025
+    3300188: Cone
+    3300190: Cone_001
+    3300192: Cone_002
+    3300194: Cone_003
+    3300196: Cone_004
+    3300198: Cone_005
     4300000: SquareColumn01
     4300002: SquareColumn04
     4300004: SquareColumn03
@@ -295,6 +463,48 @@ ModelImporter:
     4300110: Cylinder_001
     4300112: Cylinder
     4300114: Cube_000
+    4300116: Circle_013
+    4300118: Circle_012
+    4300120: Circle_011
+    4300122: Circle_010
+    4300124: Circle_009
+    4300126: Circle_008
+    4300128: Circle_007
+    4300130: Circle_006
+    4300132: Circle_005
+    4300134: Circle_004
+    4300136: Circle_003
+    4300138: Circle_002
+    4300140: Circle_001
+    4300142: Circle
+    4300144: Cylinder_004
+    4300146: Cylinder_019
+    4300148: Cylinder_018
+    4300150: Cylinder_017
+    4300152: Cylinder_016
+    4300154: Cylinder_015
+    4300156: Cylinder_014
+    4300158: Cylinder_013
+    4300160: Cylinder_012
+    4300162: Cylinder_011
+    4300164: Cylinder_010
+    4300166: Cylinder_009
+    4300168: Cylinder_008
+    4300170: Cylinder_007
+    4300172: Cylinder_006
+    4300174: Cylinder_005
+    4300176: Cylinder_023
+    4300178: Cylinder_022
+    4300180: Cylinder_021
+    4300182: Cylinder_020
+    4300184: Cylinder_025
+    4300186: Cylinder_024
+    4300188: Cone_005
+    4300190: Cone_004
+    4300192: Cone_003
+    4300194: Cone_002
+    4300196: Cone_001
+    4300198: Cone
     7400000: Default Take
     9500000: //RootNode
   materials:
