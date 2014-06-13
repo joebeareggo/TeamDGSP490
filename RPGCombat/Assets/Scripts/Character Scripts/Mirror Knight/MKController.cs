@@ -158,8 +158,8 @@ public class MKController : EnemyController {
 		// Action times
 		timeDodge = 0.4f;
 		timeFlinch = 0.8f;
-		timeBasicAttack = 0.75f;
-		timeHeavyAttack = 1.275f;
+		timeBasicAttack = 0.65f;
+		timeHeavyAttack = 1.1f;
 		timeBlockedAttack = 0.3f;
 		timeInvincible = 0.25f;
 		

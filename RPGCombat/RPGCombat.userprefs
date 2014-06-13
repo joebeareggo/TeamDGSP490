@@ -2,8 +2,9 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
   <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Scripts/Character Scripts/Player/KnightController.cs">
     <Files>
-      <File FileName="Assets/Scripts/Character Scripts/Player/KnightController.cs" Line="137" Column="24" />
-      <File FileName="Assets/Scripts/Character Scripts/Mirror Knight/MKController.cs" Line="164" Column="24" />
+      <File FileName="Assets/Scripts/Character Scripts/Player/KnightController.cs" Line="877" Column="8" />
+      <File FileName="Assets/Scripts/Character Scripts/Mirror Knight/MKController.cs" Line="967" Column="1" />
+      <File FileName="Assets/Scripts/Camera Scripts/ThirdPersonCamera.cs" Line="64" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

@@ -14,6 +14,21 @@ public class KnightController : MonoBehaviour {
 
 	KnightHealth knightHealth;	// Health and stamina script
 
+	AudioSource audioSource;
+
+	// Audio variables
+	public AudioClip audioWalking;
+	public AudioClip audioSprinting;
+	public AudioClip audioSwingLeft;
+	public AudioClip audioSwingRight;
+	public AudioClip audioBlock;
+	public AudioClip audioDodge;
+	public AudioClip audioFlinch;
+	public AudioClip audioDying;
+
+	// Audio timer
+	float audioTimer;
+
 	// Movement variables
 	float moveSpeed;		// Movement speed
 	float hMovement;		// Horizontal movement
@@ -89,7 +104,12 @@ public class KnightController : MonoBehaviour {
 
 		knightHealth = GetComponent<KnightHealth> ();	// Get KnightHealth script component
 
+		audioSource = GetComponent<AudioSource> ();		// Get Audio Source component
+
 		playerState = PlayerState.Free;	// Initiate player state to free
+
+		// Audio variables
+		audioTimer = 0.0f;
 
 		// Movement variables
 		moveSpeed = 180000.0f;			// Character movement speed
@@ -131,8 +151,8 @@ public class KnightController : MonoBehaviour {
 		// Action times
 		timeDodge = 0.4f;
 		timeFlinch = 0.8f;
-		timeBasicAttack = 0.5f;
-		timeHeavyAttack = 0.85f;
+		timeBasicAttack = 0.45f;
+		timeHeavyAttack = 0.75f;
 		timeBlockedAttack = 0.3f;
 		timeInvincible = 0.25f;
 		timeStaminaDelay = 1.0f;
@@ -193,6 +213,19 @@ public class KnightController : MonoBehaviour {
 				// Is the player sprinting?
 				if(isSprinting && knightHealth.GetStamina () > 0.0f)
 				{
+					// Audio
+					if(audioSource.clip != audioSprinting || audioTimer >= audioWalking.length)
+					{
+						audioSource.clip = audioSprinting;
+						audioSource.Play ();
+
+						audioTimer = 0.0f;
+					}
+					else
+					{
+						audioTimer += Time.deltaTime;
+					}
+
 					movement *= 2.0f;	// Increase movement speed
 
 					// Reduce stamina while sprinting
@@ -201,11 +234,37 @@ public class KnightController : MonoBehaviour {
 				// Isn't sprinting
 				else
 				{
+					// Audio
+					if(audioSource.clip != audioWalking || audioTimer >= audioWalking.length)
+					{
+						audioSource.clip = audioWalking;
+						audioSource.Play ();
+
+						audioTimer = 0.0f;
+					}
+					else
+					{
+						audioTimer += Time.deltaTime;
+					}
+
 					isSprinting = false;
 				}
 			}
 			else if(vMovement < 0.0f)
 			{
+				// Audio
+				if(audioSource.clip != audioWalking || audioTimer >= audioWalking.length)
+				{
+					audioSource.clip = audioWalking;
+					audioSource.Play ();
+
+					audioTimer = 0.0f;
+				}
+				else
+				{
+					audioTimer += Time.deltaTime;
+				}
+
 				movingForward = false;	// Moving backwards
 				isSprinting = false;	// Can't sprint backwards
 			}
@@ -213,6 +272,9 @@ public class KnightController : MonoBehaviour {
 		// Player isn't moving
 		else
 		{
+			audioSource.Stop ();	// Stop audio
+			audioSource.clip = null;
+
 			isIdle = true;
 			movingForward = true;	// Default for idle state
 			isSprinting = false;
@@ -230,6 +292,11 @@ public class KnightController : MonoBehaviour {
 		// Check if the player is blocking an attack
 		if(blockedAttack)
 		{
+			// Audio
+			if(blockTimer == 0.0f)
+			{
+				PlaySound (audioBlock);
+			}
 			blockTimer += Time.deltaTime;	// Increase block timer by update time
 		}
 
@@ -280,12 +347,18 @@ public class KnightController : MonoBehaviour {
 				// Reduce stamina
 				if(attackType == AttackType.Basic)
 				{
+					// Audio
+					PlaySound (audioSwingLeft);
+
 					knightHealth.SetStamina (knightHealth.GetStamina () - 25.0f);
 					currentDamage = attackDamageBasic;
 				}
 				// Reduce more stamina for heavy attack
 				else if(attackType == AttackType.Heavy)
 				{
+					// Audio
+					PlaySound (audioSwingRight);
+
 					knightHealth.SetStamina (knightHealth.GetStamina () - 35.0f);
 					currentDamage = attackDamageHeavy;
 				}
@@ -345,6 +418,9 @@ public class KnightController : MonoBehaviour {
 		// Reduce stamina upon entry
 		if(dodgeTimer == 0.0f)
 		{
+			// Audio
+			PlaySound (audioDodge);
+
 			attackAfterDodge = false;	// Dodge to attack initially disabled
 
 			knightHealth.SetStamina (knightHealth.GetStamina () - 15.0f);
@@ -380,6 +456,12 @@ public class KnightController : MonoBehaviour {
 	// Flinching state logic
 	void FlinchingLogic()
 	{
+		// Audio
+		if(flinchTimer == 0.0f)
+		{
+			PlaySound (audioFlinch);
+		}
+
 		// Check if character is dead
 		if (knightHealth.GetHealth () <= 0.0f)
 			ChangeToState (PlayerState.Dead);
@@ -397,6 +479,9 @@ public class KnightController : MonoBehaviour {
 	{
 		if(isDying && anim.GetCurrentAnimatorStateInfo(0).nameHash == dyingStateHash)
 		{
+			// Audio
+			PlaySound (audioDying);
+
 			isDying = false;
 		}
 	}
@@ -411,6 +496,10 @@ public class KnightController : MonoBehaviour {
 	 */
 	void ChangeToState(PlayerState state)
 	{
+		// Audio timer
+		audioTimer = 0.0f;
+		audioSource.clip = null;
+
 		switch(state)
 		{
 		case  PlayerState.Free:
@@ -607,7 +696,7 @@ public class KnightController : MonoBehaviour {
 				break;
 			case PlayerState.Dodging:
 				// Check if dodge is complete
-				if(dodgeTimer > timeDodge - 0.2f)
+				if(dodgeTimer > timeDodge * 0.5f)
 					attackAfterDodge = true;
 				break;
 			case PlayerState.Flinching:
@@ -617,7 +706,7 @@ public class KnightController : MonoBehaviour {
 				break;
 			case PlayerState.Attacking:
 				//Check timer against attack type and trigger combo if capable.
-				if(attackType == AttackType.Basic && attackTimer > timeBasicAttack)
+				if(attackType == AttackType.Basic && attackTimer > timeBasicAttack * 0.5f)
 					continueAttack = true;
 				break;
 			}
@@ -899,5 +988,19 @@ public class KnightController : MonoBehaviour {
 		}
 
 		return canRotate;
+	}
+
+	/* * * * * * * * * * * * * * * Audio Functions * * * * * * * * * * * * * * * */
+
+	/*
+	 * PlaySound
+	 * 
+	 * This function handles variables for sound transition.
+	 */
+	void PlaySound(AudioClip clip)
+	{
+		audioSource.Stop ();			// Stop curren taudio
+		audioSource.clip = clip;		// Set current clip to clip
+		audioSource.PlayOneShot (clip);	// Play clip
 	}
 }

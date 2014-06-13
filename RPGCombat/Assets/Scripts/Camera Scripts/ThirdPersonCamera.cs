@@ -16,6 +16,8 @@ public class ThirdPersonCamera : MonoBehaviour {
 	void Start () {
 		targetController = target.GetComponent<KnightController> ();	// Initiate target controller
 
+		transform.position = new Vector3 (transform.position.x, target.transform.position.y, transform.position.z);
+
 		Vector3 angle = transform.eulerAngles;
 		x = angle.x;
 		y = angle.y;
@@ -34,9 +36,9 @@ public class ThirdPersonCamera : MonoBehaviour {
 		vMouse = Input.GetAxis ("Mouse Y");
 
 		y -= vMouse * mouseSensitivity * Time.deltaTime;
-		if(y <= 45.0f)
+		if(y <= 1.0f)
 		{
-			y = 45.0f;
+			y = 1.0f;
 		}
 		else if(y >= 89.0f)
 		{
