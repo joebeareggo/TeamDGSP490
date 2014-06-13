@@ -104,6 +104,30 @@ ModelImporter:
     100196: Cone_003
     100198: Cone_004
     100200: Cone_005
+    100202: Bone
+    100204: Door01
+    100206: Door02
+    100208: Door03
+    100210: Door04
+    100212: Door05
+    100214: Door06
+    100216: Door07
+    100218: Door08
+    100220: DoorArm01
+    100222: DoorArm02
+    100224: DoorArm03
+    100226: DoorArm04
+    100228: DoorArm05
+    100230: DoorArm06
+    100232: DoorArm07
+    100234: DoorArm08
+    100236: DoorBone01
+    100238: DoorBone03
+    100240: DoorBone04
+    100242: DoorBone05
+    100244: DoorBone06
+    100246: DoorBone07
+    100248: DoorBone08
     400000: BigTower01
     400002: BigTower02
     400004: BigTower03
@@ -205,6 +229,30 @@ ModelImporter:
     400196: Cone_003
     400198: Cone_004
     400200: Cone_005
+    400202: Bone
+    400204: Door01
+    400206: Door02
+    400208: Door03
+    400210: Door04
+    400212: Door05
+    400214: Door06
+    400216: Door07
+    400218: Door08
+    400220: DoorArm01
+    400222: DoorArm02
+    400224: DoorArm03
+    400226: DoorArm04
+    400228: DoorArm05
+    400230: DoorArm06
+    400232: DoorArm07
+    400234: DoorArm08
+    400236: DoorBone01
+    400238: DoorBone03
+    400240: DoorBone04
+    400242: DoorBone05
+    400244: DoorBone06
+    400246: DoorBone07
+    400248: DoorBone08
     2300000: BigTower01
     2300002: BigTower02
     2300004: BigTower03
@@ -505,8 +553,24 @@ ModelImporter:
     4300194: Cone_002
     4300196: Cone_001
     4300198: Cone
+    4300200: Door03
+    4300202: Door08
+    4300204: Door07
+    4300206: Door05
+    4300208: Door06
+    4300210: Door04
+    4300212: Door02
+    4300214: Door01
     7400000: Default Take
     9500000: //RootNode
+    13700000: Door01
+    13700002: Door02
+    13700004: Door03
+    13700006: Door04
+    13700008: Door05
+    13700010: Door06
+    13700012: Door07
+    13700014: Door08
   materials:
     importMaterials: 1
     materialName: 0
