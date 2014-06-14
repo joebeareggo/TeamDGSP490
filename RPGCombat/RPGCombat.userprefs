@@ -1,10 +1,9 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Scripts/Character Scripts/Player/KnightController.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/MainMenu/MainMenu.js">
     <Files>
-      <File FileName="Assets/Scripts/Character Scripts/Player/KnightController.cs" Line="877" Column="8" />
-      <File FileName="Assets/Scripts/Character Scripts/Mirror Knight/MKController.cs" Line="967" Column="1" />
-      <File FileName="Assets/Scripts/Camera Scripts/ThirdPersonCamera.cs" Line="64" Column="1" />
+      <File FileName="Assets/MainMenu/MainMenu.js" Line="28" Column="2" />
+      <File FileName="Assets/MainMenu/MainMenu.js" Line="20" Column="8" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
