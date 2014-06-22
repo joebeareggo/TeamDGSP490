@@ -1,8 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+
 public class Trap : MonoBehaviour {
+	public int RandomNumber(int min, int max)
+	{
+		Random random = new Random();
+		return random(min, max);
+	}
 	public float delayTime;
+
 
 	// Use this for initialization
 	void Start () {
@@ -14,8 +21,9 @@ public class Trap : MonoBehaviour {
 	{
 		while(true)
 		{
+			int counter = RandomNumber(1,15);
 			animation.Play();
-			yield return new WaitForSeconds(3f);
+			yield return new WaitForSeconds(counter);
 		}
 	}
 
